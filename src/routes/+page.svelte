@@ -5,138 +5,11 @@
   import { Match, Participant } from '../lib/typedef'
   import type { ParticipantInfo } from '../lib/typedef'
 
-  let rawParticipants: ParticipantInfo[] = [
-    {id: 1, name: "david"},
-    {id: 2, name: "ahmad"},
-    {id: 3, name: "nathan"},
-    {id: 4, name: "luke"},
-    {id: 5, name: "asher"},
-    {id: 6, name: "olivia"},
-    {id: 7, name: "emily"},
-    {id: 8, name: "liam"},
-    {id: 9, name: "ava"},
-    {id: 10, name: "noah"},
-    {id: 11, name: "isabella"},
-    {id: 12, name: "mason"},
-    {id: 13, name: "sophia"},
-    {id: 14, name: "jackson"},
-    {id: 15, name: "oliver"},
-    {id: 16, name: "amelia"},
-    {id: 17, name: "ethan"},
-    {id: 18, name: "mia"},
-    {id: 19, name: "logan"},
-    {id: 20, name: "lucas"},
-    {id: 21, name: "harper"},
-    {id: 22, name: "abigail"},
-    {id: 23, name: "alexander"},
-    {id: 24, name: "ella"},
-    {id: 25, name: "carter"},
-    {id: 26, name: "avery"},
-    {id: 27, name: "henry"},
-    {id: 28, name: "mila"},
-    {id: 29, name: "owen"},
-    {id: 30, name: "scarlett"},
-    {id: 31, name: "wyatt"},
-    {id: 32, name: "eva"},
-    // {id: 33, name: "jayden"},
-    // {id: 34, name: "leah"},
-    // {id: 35, name: "nicholas"},
-    // {id: 36, name: "zoey"},
-    // {id: 37, name: "caleb"},
-    // {id: 38, name: "penelope"},
-    // {id: 39, name: "isaac"},
-    // {id: 40, name: "lily"},
-    // {id: 41, name: "gabriel"},
-    // {id: 42, name: "chloe"},
-    // {id: 43, name: "jaxon"},
-    // {id: 44, name: "madison"},
-    // {id: 45, name: "joseph"},
-    // {id: 46, name: "aubrey"},
-    // {id: 47, name: "dylan"},
-    // {id: 48, name: "adeline"},
-    // {id: 49, name: "jaden"},
-    // {id: 50, name: "layla"},
-    // {id: 51, name: "gavin"},
-    // {id: 52, name: "riley"},
-    // {id: 53, name: "michael"},
-    // {id: 54, name: "grace"},
-    // {id: 55, name: "wyatt"},
-    // {id: 56, name: "zoey"},
-    // {id: 57, name: "joseph"},
-    // {id: 58, name: "aubrey"},
-    // {id: 59, name: "dylan"},
-    // {id: 60, name: "adeline"},
-    // {id: 61, name: "jaden"},
-    // {id: 62, name: "layla"},
-    // {id: 63, name: "gavin"},
-    // {id: 64, name: "riley"},
-    // {id: 65, name: "michael"},
-    // {id: 66, name: "grace"},
-    // {id: 67, name: "elijah"},
-    // {id: 68, name: "hazel"},
-    // {id: 69, name: "jacob"},
-    // {id: 70, name: "ella"},
-    // {id: 71, name: "julian"},
-    // {id: 72, name: "lillian"},
-    // {id: 73, name: "adam"},
-    // {id: 74, name: "aria"},
-    // {id: 75, name: "ryan"},
-    // {id: 76, name: "aubree"},
-    // {id: 77, name: "nathan"},
-    // {id: 78, name: "sophie"},
-    // {id: 79, name: "levi"},
-    // {id: 80, name: "amelia"},
-    // {id: 81, name: "ethan"},
-    // {id: 82, name: "mia"},
-    // {id: 83, name: "logan"},
-    // {id: 84, name: "lucas"},
-    // {id: 85, name: "harper"},
-    // {id: 86, name: "abigail"},
-    // {id: 87, name: "alexander"},
-    // {id: 88, name: "ella"},
-    // {id: 89, name: "carter"},
-    // {id: 90, name: "avery"},
-    // {id: 91, name: "henry"},
-    // {id: 92, name: "mila"},
-    // {id: 93, name: "owen"},
-    // {id: 94, name: "scarlett"},
-    // {id: 95, name: "wyatt"},
-    // {id: 96, name: "eva"},
-    // {id: 97, name: "jayden"},
-    // {id: 98, name: "leah"},
-    // {id: 99, name: "nicholas"},
-    // {id: 100, name: "zoey"},
-    // {id: 101, name: "caleb"},
-    // {id: 102, name: "penelope"},
-    // {id: 103, name: "isaac"},
-    // {id: 104, name: "lily"},
-    // {id: 105, name: "gabriel"},
-    // {id: 106, name: "chloe"},
-    // {id: 107, name: "jaxon"},
-    // {id: 108, name: "madison"},
-    // {id: 109, name: "joseph"},
-    // {id: 110, name: "aubrey"},
-    // {id: 111, name: "dylan"},
-    // {id: 112, name: "adeline"},
-    // {id: 113, name: "jaden"},
-    // {id: 114, name: "layla"},
-    // {id: 115, name: "gavin"},
-    // {id: 116, name: "riley"},
-    // {id: 117, name: "michael"},
-    // {id: 118, name: "grace"},
-    // {id: 119, name: "elijah"},
-    // {id: 120, name: "hazel"},
-    // {id: 121, name: "jacob"},
-    // {id: 122, name: "ella"},
-    // {id: 123, name: "julian"},
-    // {id: 124, name: "lillian"},
-    // {id: 125, name: "adam"},
-    // {id: 126, name: "aria"},
-    // {id: 127, name: "ryan"},
-    // {id: 128, name: "aubree"},
-  ]
+  let rawParticipants = [
+    "david", "ahmad", "nathan", "luke", "asher", "olivia", "emily", "liam", "ava", "noah", "isabella", "mason", "sophia", "jackson", "oliver", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "wyatt", "zoey", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree", "nathan", "sophie", "levi", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree"
+  ].slice(0,35);
 
-  let allParticipants: Participant[] = rawParticipants.map((i: ParticipantInfo) => new Participant(i.id, i.name));
+  let allParticipants: Participant[] = rawParticipants.map((i: string, n) => new Participant(n+1, i));
 
   let allMatches: Match[][] = [];
 
@@ -145,6 +18,29 @@
   // --- ---------- ---
 
   const GenerateMatches = () => {
+    //Fill in with dummy people
+    while (Math.log10(allParticipants.length) / Math.log10(participantsPerMatch) % 1 != 0)
+      allParticipants.push(new Participant(allParticipants[allParticipants.length - 1].id + 1, "BYE", undefined, true, 1))
+
+    //Sort participants by seed
+    let sortedParticipants = allParticipants.sort((a,b) => a.seed - b.seed);
+    sortedParticipants = sortedParticipants.map(i => i)
+    let posRound1 = Array(sortedParticipants.length).fill(0);
+
+    for (var i = 0; i <= Math.log2(posRound1.length); i++) {
+      for (var j = 1; j <= posRound1.length; j++) {
+        let myRank = Math.floor((j - 1) / Math.pow(2, i)) + 1;
+        posRound1[j - 1] += (Math.floor(myRank % 4 / 2) * Math.pow(2, Math.floor(Math.log2(posRound1.length) - i - 1)));
+      }
+    }
+
+    //Set the first round to be the sorted participants
+    sortedParticipants.forEach((i, n) => allParticipants[posRound1[n]] = i)
+
+    // console.log(posRound1)
+    // console.log("Sp", sortedParticipants);
+    // console.log("AP", allParticipants)
+
     let roundNumber = 1;
     let prevRound: Match[] = [];
     let prevRoundLength = allParticipants.length;
@@ -171,7 +67,10 @@
       roundNumber++;
     } while (prevRound.length > 1);
 
-    var matchMutations: number[] = Array(allMatches.reduce((count, round) => count + round.length, 0)).fill(0)
+    allMatches[0].forEach(i => {
+      if (i.participants.reduce((count, curr) => count + (curr.isDummy ? 0 : 1), 0) == 1) 
+        resolveMatch(i, i.participants.find(j => !j.isDummy)!)
+    })
   }
   GenerateMatches()
 
@@ -195,6 +94,7 @@
     }
 
     if (match.feeds) allMatches[match.feeds.round - 1][match.feeds.id] = match.feeds.copyOf;
+    else allMatches[match.round - 1][match.id] = match.copyOf;
   }
 
 </script>
@@ -202,7 +102,7 @@
 <h1>Welcome to Svaketz</h1>
 
   <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px;">
-    <div style="display: flex; flex-direction: row; align-items: stretch;">
+    <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
       <div style="display: flex; flex-direction: column; justify-content: space-around;">
        {#each allParticipants as p, i (p.id)}
           <TournamentSlot displayText={p.name} index={i} roundNumber={0} numRounds={allMatches.length} />
@@ -217,10 +117,12 @@
     {/each}
   </div>
 
-  <div style="border-radius: 5px; padding: 8px; border: 4px double black; padding: 10px; min-width: 400px;">
+  <div style="border-radius: 5px; padding: 8px; border: 4px double black; overflow-y: auto; padding: 10px; min-width: 450px;">
     <h1 style="text-align: center;">Matches</h1>
       {#each allMatches as round, rn}
-        <h2 style="margin-top: 15px;" on:click={() => console.log("allm ", allMatches)}>{roundNumberToTitle(rn)}</h2>
+        {#if allMatches[rn].some(i => i.resolved == false)}
+          <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
+        {/if}
         {#each round as match}
           <MatchCard resolve={(winner) => {resolveMatch(match, winner)}} bind:match={match} />
         {/each}

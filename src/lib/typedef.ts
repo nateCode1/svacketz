@@ -13,11 +13,15 @@ export class Participant {
 	id: number;
 	name: string;
 	from?: Match;
+  isDummy: boolean;
+  seed: number;
 
-	constructor(id: number, name: string, from?: Match) {
+	constructor(id: number, name: string, from?: Match, isDummy?: boolean, seed?: number) {
 		this.id = id;
 		this.name = name;
 		this.from = from;
+    this.isDummy = isDummy ? true : false;
+    this.seed = seed ?? Math.random();
 	}
 
 	setTo = (p: Participant) => {
