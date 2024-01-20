@@ -12,7 +12,6 @@
     {#each match.participants.filter(i => !i.isDummy) as participant}
       <button on:click={() => {resolve(participant)}} style="margin: 3px;">{participant.winner?.name ?? 'TBD'}</button>
     {/each}
-    <p></p>
   </div>
 {/if}
 

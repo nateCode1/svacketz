@@ -4,6 +4,7 @@
   import TournamentSlot from "./TournamentSlot.svelte";
   import { Match, Participant } from '../lib/typedef'
   import type { ParticipantInfo } from '../lib/typedef'
+	import Bracket from './Bracket.svelte';
 
   let rawParticipants = [
     "david", "ahmad", "nathan", "luke", "asher", "olivia", "emily", "liam", "ava", "noah", "isabella", "mason", "sophia", "jackson", "oliver", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "wyatt", "zoey", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree", "nathan", "sophie", "levi", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree"
@@ -23,8 +24,13 @@
       allParticipants.push(new Participant(allParticipants[allParticipants.length - 1].id + 1, "BYE", undefined, true, 1))
 
     //Sort participants by seed
-    let sortedParticipants = allParticipants.sort((a,b) => a.seed - b.seed);
-    sortedParticipants = sortedParticipants.map(i => i)
+    let sortedParticipants = [... allParticipants].sort((a,b) => a.seed - b.seed);
+    sortedParticipants = sortedParticipants.map((i,j) => {
+      i.seed = j+1;
+      return i;
+    })
+    
+    //find the order of participants in round 1 by seed
     let posRound1 = Array(sortedParticipants.length).fill(0);
 
     for (var i = 0; i <= Math.log2(posRound1.length); i++) {
@@ -34,12 +40,8 @@
       }
     }
 
-    //Set the first round to be the sorted participants
+    //Set the first round to be the sorted participants in the correct order
     sortedParticipants.forEach((i, n) => allParticipants[posRound1[n]] = i)
-
-    // console.log(posRound1)
-    // console.log("Sp", sortedParticipants);
-    // console.log("AP", allParticipants)
 
     let roundNumber = 1;
     let prevRound: Match[] = [];
@@ -56,7 +58,7 @@
           }
         }
         
-        var thisMatch = new Match(matchId++, currMatchParticipants.map(i => i.winner), roundNumber )
+        var thisMatch = new Match(matchId++, currMatchParticipants.map(i => i.winner), roundNumber)
         currRound.push(thisMatch);
         currMatchParticipants.forEach(p => {if (p instanceof Match) p.feeds = thisMatch});
 
@@ -101,24 +103,25 @@
 
 <h1>Welcome to Svaketz</h1>
 
-  <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px;">
-    <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
-      <div style="display: flex; flex-direction: column; justify-content: space-around;">
+<div style="display: flex; justify-content: space-between; width: 100%; gap: 8px;">
+  <!-- <Bracket matches={allMatches}/> -->
+  <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
+    <div style="display: flex; flex-direction: column; justify-content: space-around;">
        {#each allParticipants as p, i (p.id)}
-          <TournamentSlot displayText={p.name} index={i} roundNumber={0} numRounds={allMatches.length} />
+          <TournamentSlot seed={p.seed} displayText={p.name} index={i} roundNumber={0} numRounds={allMatches.length} />
         {/each}
      </div>
     {#each allMatches as r, rn}
       <div style="display: flex; flex-direction: column; justify-content: space-around;">
         {#each r as match, i (match.winner)}
-          <TournamentSlot displayText={match.winner?.name ?? "TBD"} index={i} roundNumber={rn + 1} numRounds={allMatches.length} /> 
+          <TournamentSlot seed={match.resolved ? match.winner.seed : -1} displayText={match.winner?.name ?? "TBD"} index={i} roundNumber={rn + 1} numRounds={allMatches.length} /> 
         {/each}
       </div>
     {/each}
   </div>
 
   <div style="border-radius: 5px; padding: 8px; border: 4px double black; overflow-y: auto; padding: 10px; min-width: 450px;">
-    <h1 style="text-align: center;">Matches</h1>
+    <h1 on:click={() => console.log("All matches", allMatches)} style="text-align: center;">Matches</h1>
       {#each allMatches as round, rn}
         {#if allMatches[rn].some(i => i.resolved == false)}
           <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>

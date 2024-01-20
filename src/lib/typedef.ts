@@ -27,6 +27,7 @@ export class Participant {
 	setTo = (p: Participant) => {
 		this.name = p.name;
 		this.id = p.id;
+    this.seed = p.seed;
 	};
 
 	get winner() {
