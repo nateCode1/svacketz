@@ -2,7 +2,7 @@
   import { writable } from 'svelte/store';
 	import MatchCard from "./MatchCard.svelte";
   import TournamentSlot from "./TournamentSlot.svelte";
-  import { Match, Participant } from '../lib/typedef'
+  import { Match, Participant } from '$lib/typedef'
   import type { ParticipantInfo } from '../lib/typedef'
 	import Bracket from './Bracket.svelte';
 
@@ -21,7 +21,7 @@
   const GenerateMatches = () => {
     //Fill in with dummy people
     while (Math.log10(allParticipants.length) / Math.log10(participantsPerMatch) % 1 != 0)
-      allParticipants.push(new Participant(allParticipants[allParticipants.length - 1].id + 1, "BYE", undefined, true, 1))
+      allParticipants.push(new Participant(allParticipants[allParticipants.length - 1].id + 1, "BYE", 1, true))
 
     //Sort participants by seed
     let sortedParticipants = [... allParticipants].sort((a,b) => a.seed - b.seed);

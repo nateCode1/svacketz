@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Match, Participant } from '../lib/typedef'
+  import { Match, Participant } from '$lib/typedef'
 
   export let matches: Match[][];
 
