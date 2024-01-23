@@ -2,29 +2,29 @@
   import { writable } from 'svelte/store';
 	import MatchCard from "./MatchCard.svelte";
   import TournamentSlot from "./TournamentSlot.svelte";
-  import { Match, Participant } from '$lib/typedef'
-  import type { ParticipantInfo } from '../lib/typedef'
+  import { Match, Entrant } from '$lib/typedef'
+  import type { EntrantInfo, MatchParticipant, MatchResult } from '../lib/typedef'
 	import Bracket from './Bracket.svelte';
 
   let rawParticipants = [
     "david", "ahmad", "nathan", "luke", "asher", "olivia", "emily", "liam", "ava", "noah", "isabella", "mason", "sophia", "jackson", "oliver", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "wyatt", "zoey", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree", "nathan", "sophie", "levi", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree"
-  ].slice(0,35);
+  ].slice(0,30);
 
-  let allParticipants: Participant[] = rawParticipants.map((i: string, n) => new Participant(n+1, i));
+  let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(n+1, i));
 
-  let allMatches: Match[][] = [];
+  let allMatches: Match[] = [];
 
   // --- Parameters ---
-  var participantsPerMatch = 2;
+
   // --- ---------- ---
 
   const GenerateMatches = () => {
     //Fill in with dummy people
-    while (Math.log10(allParticipants.length) / Math.log10(participantsPerMatch) % 1 != 0)
-      allParticipants.push(new Participant(allParticipants[allParticipants.length - 1].id + 1, "BYE", 1, true))
+    while (Math.log10(allEntrants.length) / Math.log10(2) % 1 != 0)
+      allEntrants.push(new Entrant(allEntrants[allEntrants.length - 1].id + 1, "BYE", 1, true))
 
     //Sort participants by seed
-    let sortedParticipants = [... allParticipants].sort((a,b) => a.seed - b.seed);
+    let sortedParticipants = [... allEntrants].sort((a,b) => a.seed - b.seed);
     sortedParticipants = sortedParticipants.map((i,j) => {
       i.seed = j+1;
       return i;
@@ -41,40 +41,64 @@
     }
 
     //Set the first round to be the sorted participants in the correct order
-    sortedParticipants.forEach((i, n) => allParticipants[posRound1[n]] = i)
+    sortedParticipants.forEach((i, n) => allEntrants[posRound1[n]] = i)
 
-    let roundNumber = 1;
-    let prevRound: Match[] = [];
-    let prevRoundLength = allParticipants.length;
-    do {
-      let matchId = 0;
-      let currRound = allMatches[allMatches.push([]) - 1]
-      for (var i = 0; i < prevRoundLength; i+=participantsPerMatch) {
-        var currMatchParticipants: (Match | Participant)[] = []
-        for (var j = i; j < i + participantsPerMatch; j++) {
-          if (roundNumber == 1 && allParticipants[j]) currMatchParticipants.push(allParticipants[j]);
-          else if (prevRound[j]) {
-            currMatchParticipants.push(prevRound[j]);
-          }
+    // create n rounds
+    let matchesToBeResolved = new Array(Math.log2(allEntrants.length)).fill(undefined);
+
+    let currMatchId = 0;
+
+    const createMatch = (round: number, participants: MatchParticipant[]) => {
+      let currMatch = new Match(
+        currMatchId++,
+        round,
+        participants
+      )
+
+      allMatches.push(currMatch);
+      return currMatch;
+    }
+
+    for (var i = 0; i < allEntrants.length; i += 2) {
+      let order = 0;
+
+      let newMatch = createMatch(
+        order + 1,
+        [{from: undefined, data: allEntrants[i]},
+        {from: undefined, data: allEntrants[i + 1]}]
+      )
+
+      while (true) {
+        if (matchesToBeResolved[order]) {
+          let oldMatch = newMatch;
+          //create new match that takes the winners of the two previous matches
+          newMatch = createMatch(
+            order + 2,
+            [{from: oldMatch, data: undefined},
+            {from: matchesToBeResolved[order], data: undefined}]
+          )
+
+          //set the winners of the two previous matches to go to the new match
+          oldMatch.results[0].to = newMatch;
+          matchesToBeResolved[order].results[0].to = newMatch;
+
+          matchesToBeResolved[order] = false;
+          order++;
         }
-        
-        var thisMatch = new Match(matchId++, currMatchParticipants.map(i => i.winner), roundNumber)
-        currRound.push(thisMatch);
-        currMatchParticipants.forEach(p => {if (p instanceof Match) p.feeds = thisMatch});
-
+        else {
+          matchesToBeResolved[order] = newMatch;
+          break;
+        }
       }
+    }
 
-      prevRound = currRound;
-      prevRoundLength = prevRound.length;
-      roundNumber++;
-    } while (prevRound.length > 1);
-
-    allMatches[0].forEach(i => {
-      if (i.participants.reduce((count, curr) => count + (curr.isDummy ? 0 : 1), 0) == 1) 
-        resolveMatch(i, i.participants.find(j => !j.isDummy)!)
+    allMatches.forEach(i => {
+      if (i.participants.reduce((count, curr) => count + (curr.data?.isDummy ? 0 : 1), 0) == 1) 
+        resolveMatch(i, i.participants.find(j => !j.data!.isDummy)!.data!)
     })
   }
   GenerateMatches()
+  console.log("All ", allMatches)
 
   const roundNumberToTitle = (rn: number) => {
     let roundTitles: any = {
@@ -82,30 +106,25 @@
       4: "Semi-Finals",
       2: "Grand Final",
     }
-    let rOf = Math.pow(participantsPerMatch, allMatches.length - rn);
+    let rOf = Math.pow(2, allMatches.length - rn);
     return roundTitles[rOf] ?? ("Round of " + rOf)
   }
 
-  function resolveMatch(match: Match, winner: Participant) {
+  function resolveMatch(match: Match, winner: Entrant) {
     match.resolved = true;
-    match.winner = winner;
+    match.results[0].data = winner;
+    match.results[0].to!.participants.find(i => i.from == match)!.data = winner;
 
-    let indInNext = match.feeds?.participants.findIndex(i => i.from!.id == match.id && i.from!.round == match.round) 
-    if (indInNext != -1 && match.feeds) {
-      match.feeds!.participants[indInNext!].setTo(winner);
-    }
-
-    if (match.feeds) allMatches[match.feeds.round - 1][match.feeds.id] = match.feeds.copyOf;
-    else allMatches[match.round - 1][match.id] = match.copyOf;
+    allMatches[match.id] = match.copyOf;
   }
 
 </script>
 
 <h1>Welcome to Svaketz</h1>
 
-<div style="display: flex; justify-content: space-between; width: 100%; gap: 8px;">
-  <!-- <Bracket matches={allMatches}/> -->
-  <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
+<div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 80vh;">
+  <Bracket entrants={allEntrants} matches={allMatches}/>
+  <!-- <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
     <div style="display: flex; flex-direction: column; justify-content: space-around;">
        {#each allParticipants as p, i (p.id)}
           <TournamentSlot seed={p.seed} displayText={p.name} index={i} roundNumber={0} numRounds={allMatches.length} />
@@ -113,22 +132,20 @@
      </div>
     {#each allMatches as r, rn}
       <div style="display: flex; flex-direction: column; justify-content: space-around;">
-        {#each r as match, i (match.winner)}
+        {#each r as match, i}
           <TournamentSlot seed={match.resolved ? match.winner.seed : -1} displayText={match.winner?.name ?? "TBD"} index={i} roundNumber={rn + 1} numRounds={allMatches.length} /> 
         {/each}
       </div>
     {/each}
-  </div>
+  </div> -->
 
   <div style="border-radius: 5px; padding: 8px; border: 4px double black; overflow-y: auto; padding: 10px; min-width: 450px;">
-    <h1 on:click={() => console.log("All matches", allMatches)} style="text-align: center;">Matches</h1>
-      {#each allMatches as round, rn}
-        {#if allMatches[rn].some(i => i.resolved == false)}
+    <h1 on:click={() => console.log("All matches", allMatches)} style="text-align: center; margin-bottom: 20px;">Matches</h1>
+      {#each allMatches as match}
+        <!-- {#if allMatches[rn].some(i => i.resolved == false)}
           <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
-        {/if}
-        {#each round as match}
-          <MatchCard resolve={(winner) => {resolveMatch(match, winner)}} bind:match={match} />
-        {/each}
+        {/if} -->
+        <MatchCard resolve={(winner) => {resolveMatch(match, winner)}} bind:match={match} />
       {/each}
   </div>
 </div>
