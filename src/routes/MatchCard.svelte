@@ -6,7 +6,7 @@
 </script>
 
 {#if !match.resolved && match.participants.every(i => i.data)}
-  <div style="border-radius: 5px; border: 2px solid black; padding: 5px; margin: 5px 0;">
+  <div style={`border-radius: 5px; border: 2px solid black; padding: 5px; margin: 5px 0; order: ${match.round * 1000 + match.id};`}>
     <h3>Match {match.id + 1}</h3>
     <p>Set winner</p>
     {#each match.participants.filter(i => i.data && !i.data.isDummy) as participant}

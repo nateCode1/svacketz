@@ -17,7 +17,7 @@ export type Position = {
 
 export type MatchResult = {
 	//possibly a property indicating placement
-	//likely a property indicating if the connection is to be drawn
+	draw: boolean; //indicates if this connection to another match should be drawn
 	to?: Match;
 	data?: Entrant;
 }
@@ -72,10 +72,10 @@ export class Match {
 		//create the results array
 		let results: MatchResult[];
 		if (!sendTo) results = [];
-		else results = sendTo.map(i => ({to: i, data: undefined}))
+		else results = sendTo.map(i => ({to: i, data: undefined, draw: false}))
 
 		while (results.length < participants.length) {
-			results.push({to: undefined, data: undefined})
+			results.push({to: undefined, data: undefined, draw: false})
 		}
 		this.results = results;
 	}

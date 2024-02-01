@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { writable } from 'svelte/store';
 	import MatchCard from "./MatchCard.svelte";
-  import TournamentSlot from "./TournamentSlot.svelte";
   import { Match, Entrant } from '$lib/typedef'
   import type { EntrantInfo, MatchParticipant, MatchResult } from '../lib/typedef'
 	import Bracket from './Bracket.svelte';
@@ -14,14 +12,10 @@
 
   let allMatches: Match[] = [];
 
-  // --- Parameters ---
-
-  // --- ---------- ---
-
   const GenerateMatches = () => {
-    //Fill in with dummy people
+    //Fill in with dummy people, ensure their seed is worse
     while (Math.log10(allEntrants.length) / Math.log10(2) % 1 != 0)
-      allEntrants.push(new Entrant(allEntrants[allEntrants.length - 1].id + 1, "BYE", 1, true))
+      allEntrants.push(new Entrant(allEntrants[allEntrants.length - 1].id + 1, "BYE", Infinity, true))
 
     //Sort participants by seed
     let sortedParticipants = [... allEntrants].sort((a,b) => a.seed - b.seed);
@@ -33,6 +27,7 @@
     //find the order of participants in round 1 by seed
     let posRound1 = Array(sortedParticipants.length).fill(0);
 
+    //This code will fill posRound1 with what position in the list of entrants the ith seed should be at
     for (var i = 0; i <= Math.log2(posRound1.length); i++) {
       for (var j = 1; j <= posRound1.length; j++) {
         let myRank = Math.floor((j - 1) / Math.pow(2, i)) + 1;
@@ -44,24 +39,29 @@
     sortedParticipants.forEach((i, n) => allEntrants[posRound1[n]] = i)
 
     // create n rounds
-    let matchesToBeResolved = new Array(Math.log2(allEntrants.length)).fill(undefined);
-
+    let matchesToBeResolved = new Array(Math.log2(allEntrants.length)).fill(undefined); //match buffer
     let currMatchId = 0;
 
+    //Utility to make a match
     const createMatch = (round: number, participants: MatchParticipant[]) => {
       let currMatch = new Match(
         currMatchId++,
         round,
         participants
       )
-
+      currMatch.results[0].draw = true;
       allMatches.push(currMatch);
       return currMatch;
     }
 
+    // GENERATE THE MATCHES
+    // Works by looping through all the entrants two at a time, and generating a match for each pair
+    // When a match is generated it is added to a buffer corresponding to what round its in
+    // If a match is to be added to a full buffer, a new match is created between the match in the buffer, and the match set to be added
     for (var i = 0; i < allEntrants.length; i += 2) {
       let order = 0;
 
+      //create the first round match
       let newMatch = createMatch(
         order + 1,
         [{from: undefined, data: allEntrants[i]},
@@ -69,23 +69,26 @@
       )
 
       while (true) {
+        //attempt to add to buffer
         if (matchesToBeResolved[order]) {
           let oldMatch = newMatch;
-          //create new match that takes the winners of the two previous matches
+          //create new match if the buffer is full
           newMatch = createMatch(
             order + 2,
-            [{from: oldMatch, data: undefined},
-            {from: matchesToBeResolved[order], data: undefined}]
+            [{from: matchesToBeResolved[order], data: undefined},
+            {from: oldMatch, data: undefined}]
           )
 
           //set the winners of the two previous matches to go to the new match
           oldMatch.results[0].to = newMatch;
           matchesToBeResolved[order].results[0].to = newMatch;
 
+          //empty the buffer
           matchesToBeResolved[order] = false;
           order++;
         }
         else {
+          //add to buffer and break
           matchesToBeResolved[order] = newMatch;
           break;
         }
@@ -139,7 +142,7 @@
     {/each}
   </div> -->
 
-  <div style="border-radius: 5px; padding: 8px; border: 4px double black; overflow-y: auto; padding: 10px; min-width: 450px;">
+  <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; border: 4px double black; overflow-y: auto; padding: 10px; min-width: 450px;">
     <h1 on:click={() => console.log("All matches", allMatches)} style="text-align: center; margin-bottom: 20px;">Matches</h1>
       {#each allMatches as match}
         <!-- {#if allMatches[rn].some(i => i.resolved == false)}
@@ -162,6 +165,7 @@
   h1, h2, h3 {
     margin-top: 4px;
     margin-bottom: 5px;
+    color: white;
   }
 
   p {
@@ -169,7 +173,11 @@
     margin-bottom: 3px;
   }
 
-  * {
+  :global(*) {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  :global(body) {
+    background-color: #222;
   }
 </style>

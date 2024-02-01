@@ -1,3 +1,10 @@
+
+<!-- --------------------------------------------- -->
+
+<!-- THIS COMPONENT IS CURRENTLY UNUSED -->
+
+<!-- --------------------------------------------- -->
+
 <script lang="ts">
   export let displayText: string;
   export let index;
@@ -10,6 +17,7 @@
   }
 </script>
 
+<h1>UNUSED</h1>
 
 <div style={`flex-grow: 1; text-align: center; display: flex; align-items: center; position: relative;`}>
   <!-- Tick Before & Vertical Line Between -->
