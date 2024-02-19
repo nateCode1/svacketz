@@ -12,6 +12,9 @@
   let gapX = 30;
   let gapY = 20;
 
+  let mousedown = false;
+
+  let bracketArea: HTMLElement;
   let allMatchElements = new Array(matches.length);
 
   let debounceHideGlow: NodeJS.Timeout;
@@ -42,6 +45,8 @@
 
   // Runs on load with a ref to the 2nd from top div (pos relative)
   function onLoad(displayArea: HTMLElement) {
+    document.addEventListener("mouseup", handleMouseup);
+
     setChildPositions(finalMatch);
 
     let minX = 0;
@@ -59,7 +64,29 @@
     // allMatchElements[0].style.border = "5px solid green"
   }
 
+  const handleMousedown = (ev: any) => {
+    if (ev.button == 0)
+      mousedown = true;
+  }
+
+  const handleMouseup = (ev: any) => {
+    if (ev.button == 0)
+      mousedown = false;
+  }
+
   const handleMousemove = (ev: any) => {
+    if (mousedown) {
+      let dx = ev.movementX;
+      let dy = ev.movementY;
+
+      bracketArea.scroll({
+        top: bracketArea.scrollTop - dy,
+        left: bracketArea.scrollLeft - dx,
+        behavior: "smooth",
+      });
+    }
+
+    // return // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (debounceHideGlow) clearTimeout(debounceHideGlow);
 
     debounceHideGlow = setTimeout(() => {
@@ -101,8 +128,9 @@
 
 </script>
 
-<div style="overflow: auto; flex-grow: 1; height: 100%;">
-  <div role="mark" on:mousemove={handleMousemove} use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
+<div bind:this={bracketArea} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+  <div role="mark" on:mousedown={handleMousedown} on:mousemove={handleMousemove} use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
     {#each matches as match, i}
       <div style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${match.visualPos.x}px; top: ${match.visualPos.y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
@@ -112,7 +140,7 @@
             <div>
               <p>{match.id + 1}</p>
             </div>
-            <div>
+            <div style="text-overflow: ellipsis; text-wrap: nowrap;">
               {#each match.participants as participant, j}
                 <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? 'W.O. ' + participant.from?.id ?? 'Oops'}</p>
               {/each}
@@ -152,7 +180,9 @@
   .card-inner {
     border-radius: 7px;
     padding: 5px;
-    background: rgba(0,0,0, 0.5);
+    flex-shrink: 1;
+    overflow: hidden;
+    background: rgba(0,0,0, 0.6);
     backdrop-filter: blur(80px);
     transition: all 300ms ease-in-out;
     display: flex;
@@ -172,7 +202,7 @@
   }
 
   .blob {
-    filter: blur(10px) opacity(70%);
+    filter: blur(10px) opacity(50%);
     position: absolute;
     z-index: -1;
     top: 0;
@@ -182,7 +212,7 @@
     aspect-ratio: 1/1;
     border-radius: 50%;
     background-color: #bbf;
-    /* background-image: linear-gradient( 89.7deg, rgba(223,0,0,1) 2.7%, rgba(214,91,0,1) 15.1%, rgba(233,245,0,1) 29.5%, rgba(23,255,17,1) 45.8%, rgba(29,255,255,1) 61.5%, rgba(5,17,255,1) 76.4%, rgba(202,0,253,1) 92.4% ); */
+    background-image: linear-gradient( 89.7deg, rgba(223,0,0,1) 2.7%, rgba(214,91,0,1) 15.1%, rgba(233,245,0,1) 29.5%, rgba(23,255,17,1) 45.8%, rgba(29,255,255,1) 61.5%, rgba(5,17,255,1) 76.4%, rgba(202,0,253,1) 92.4% );
     transition: all 100ms ease-in-out;
   }
 </style>
