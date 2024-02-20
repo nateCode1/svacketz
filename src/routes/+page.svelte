@@ -142,7 +142,7 @@
     {/each}
   </div> -->
 
-  <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; border: 4px double black; overflow-y: auto; padding: 10px; min-width: 450px;">
+  <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 450px;">
     <h1 on:click={() => console.log("All matches", allMatches)} style="text-align: center; margin-bottom: 20px;">Matches</h1>
       {#each allMatches as match}
         <!-- {#if allMatches[rn].some(i => i.resolved == false)}

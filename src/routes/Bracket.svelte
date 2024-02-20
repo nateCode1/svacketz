@@ -128,11 +128,11 @@
 
 </script>
 
-<div bind:this={bracketArea} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
   <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-  <div role="mark" on:mousedown={handleMousedown} on:mousemove={handleMousemove} use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
+<div role="mark" bind:this={bracketArea} on:mousedown={handleMousedown} on:mousemove={handleMousemove} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
+  <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
     {#each matches as match, i}
-      <div style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${match.visualPos.x}px; top: ${match.visualPos.y}px;`}>
+      <div class="hover" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${match.visualPos.x}px; top: ${match.visualPos.y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
           <div class="blob"></div>
           <div class="fake-blob"></div>
