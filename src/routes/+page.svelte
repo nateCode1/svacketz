@@ -9,12 +9,13 @@
   ].slice(0,30);
 
   let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(n+1, i));
-
   let allMatches: Match[] = [];
+
+  const pPerMatch = 4;
 
   const GenerateMatches = () => {
     //Fill in with dummy people, ensure their seed is worse
-    while (Math.log10(allEntrants.length) / Math.log10(2) % 1 != 0)
+    while (Math.log10(allEntrants.length) / Math.log10(pPerMatch) % 1 != 0)
       allEntrants.push(new Entrant(allEntrants[allEntrants.length - 1].id + 1, "BYE", Infinity, true))
 
     //Sort participants by seed
@@ -39,8 +40,12 @@
     sortedParticipants.forEach((i, n) => allEntrants[posRound1[n]] = i)
 
     // create n rounds
-    let matchesToBeResolved = new Array(Math.log2(allEntrants.length)).fill(undefined); //match buffer
+    const bufferSize = Math.log10(allEntrants.length) / Math.log10(pPerMatch);
+    let matchesToBeResolved = new Array(); //match buffer
+    for (let i = 0; i < bufferSize; i++) matchesToBeResolved[i] = new Array(pPerMatch - 1).fill(false);
     let currMatchId = 0;
+
+    console.log(matchesToBeResolved)
 
     //Utility to make a match
     const createMatch = (round: number, participants: MatchParticipant[]) => {
@@ -55,41 +60,43 @@
     }
 
     // GENERATE THE MATCHES
-    // Works by looping through all the entrants two at a time, and generating a match for each pair
+    // Works by looping through all the entrants n at a time, and generating a match for each pair
     // When a match is generated it is added to a buffer corresponding to what round its in
     // If a match is to be added to a full buffer, a new match is created between the match in the buffer, and the match set to be added
-    for (var i = 0; i < allEntrants.length; i += 2) {
+    for (var i = 0; i < allEntrants.length; i += pPerMatch) {
       let order = 0;
+      console.log("i", i)
 
       //create the first round match
+      let firstRoundParticipants = []
+      for (let j = i; j < i + pPerMatch; j++) firstRoundParticipants.push({from: undefined, data: allEntrants[j]})
       let newMatch = createMatch(
         order + 1,
-        [{from: undefined, data: allEntrants[i]},
-        {from: undefined, data: allEntrants[i + 1]}]
+        firstRoundParticipants
       )
 
       while (true) {
         //attempt to add to buffer
-        if (matchesToBeResolved[order]) {
+        if (!matchesToBeResolved[order].some((i:any) => !i)) {
           let oldMatch = newMatch;
           //create new match if the buffer is full
           newMatch = createMatch(
             order + 2,
-            [{from: matchesToBeResolved[order], data: undefined},
+            [...matchesToBeResolved[order].map((i: Match) => {return {from: i, data: undefined}}),
             {from: oldMatch, data: undefined}]
           )
 
           //set the winners of the two previous matches to go to the new match
           oldMatch.results[0].to = newMatch;
-          matchesToBeResolved[order].results[0].to = newMatch;
+          matchesToBeResolved[order].forEach((i: Match) => i.results[0].to = newMatch);
 
           //empty the buffer
-          matchesToBeResolved[order] = false;
+          matchesToBeResolved[order] = new Array(pPerMatch - 1).fill(false);
           order++;
         }
         else {
           //add to buffer and break
-          matchesToBeResolved[order] = newMatch;
+          matchesToBeResolved[order][matchesToBeResolved[order].indexOf(false)] = newMatch;
           break;
         }
       }
@@ -126,7 +133,7 @@
 <h1>Welcome to Svaketz</h1>
 
 <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 80vh;">
-  <Bracket entrants={allEntrants} matches={allMatches}/>
+  <Bracket participantsPerMatch={pPerMatch} entrants={allEntrants} matches={allMatches}/>
   <!-- <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
     <div style="display: flex; flex-direction: column; justify-content: space-around;">
        {#each allParticipants as p, i (p.id)}
@@ -143,7 +150,7 @@
   </div> -->
 
   <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 450px;">
-    <h1 on:click={() => console.log("All matches", allMatches)} style="text-align: center; margin-bottom: 20px;">Matches</h1>
+    <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
       {#each allMatches as match}
         <!-- {#if allMatches[rn].some(i => i.resolved == false)}
           <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>

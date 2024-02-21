@@ -1,14 +1,15 @@
 <script lang="ts">
   import { Match, Entrant, type MatchParticipant } from '$lib/typedef'
 
+  export let participantsPerMatch: number;
   export let matches: Match[];
   export let entrants: Entrant[];
 
-  let maxMatchesPerRound = entrants.length / 2;
+  let maxMatchesPerRound = entrants.length / participantsPerMatch;
   let rounds = Math.log2(entrants.length)
 
   let matchWidth = 100;
-  let matchHeight = 60;
+  let matchHeight = 20 + 20 * participantsPerMatch;
   let gapX = 30;
   let gapY = 20;
 
@@ -27,8 +28,10 @@
         child.from.visualPos.x = match.visualPos.x - matchWidth - gapX;
 
         //using round we know how tall the total children of the match are
-        let childrenTall = Math.pow(2, child.from.round - 1);
-        child.from.visualPos.y = match.visualPos.y + (childrenTall * (matchHeight + gapY)) * (i == 0 ? -1 : 1) * 0.5;
+        let childrenTall = Math.pow(participantsPerMatch, child.from.round);
+        console.log(childrenTall)
+        // console.log((childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5))
+        child.from.visualPos.y = match.visualPos.y + (childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5);
         setChildPositions(child.from);
 
         // totalY += setChildPositions(child.from) + matchHeight;
@@ -86,7 +89,7 @@
       });
     }
 
-    // return // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (debounceHideGlow) clearTimeout(debounceHideGlow);
 
     debounceHideGlow = setTimeout(() => {
@@ -128,7 +131,7 @@
 
 </script>
 
-  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div role="mark" bind:this={bracketArea} on:mousedown={handleMousedown} on:mousemove={handleMousemove} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
   <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
     {#each matches as match, i}
@@ -142,7 +145,7 @@
             </div>
             <div style="text-overflow: ellipsis; text-wrap: nowrap;">
               {#each match.participants as participant, j}
-                <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? 'W.O. ' + participant.from?.id ?? 'Oops'}</p>
+                <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? 'W.O. ' + (1 + participant.from?.id ?? 'Oops')}</p>
               {/each}
             </div>
           </div>
