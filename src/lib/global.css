@@ -37,10 +37,10 @@ body {
   background-color: #777; /* Hovered thumb color */
 }
 
-.hover {
-  /* transition: 0.14s all ease-in-out; */
+/* .hover {
+  transition: 0.14s all ease-in-out;
 }
 
 .hover:hover {
-  /* transform: scale(1.03 ) translateY(-3px); */
-}
+  transform: scale(1.03 ) translateY(-3px);
+} */

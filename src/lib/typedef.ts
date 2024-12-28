@@ -22,9 +22,25 @@ export type MatchResult = {
 	data?: Entrant;
 }
 
+export type Connector = {
+	thickness: number;
+	top: number;
+	bottom: number;
+	x: number;
+	tickSize: number;
+	leftTicks?: number[];
+	rightTicks?: number[];
+};
+
 // --- ----------------- ---
 
 // --- Class Declarations ---
+
+export enum MediaType {
+	YOUTUBE,
+	SPOTIFY,
+	IMAGE, // currently unsupported
+}
 
 export class Entrant {
 	id: number;
@@ -32,17 +48,24 @@ export class Entrant {
 	isDummy: boolean;
 	seed: number;
 
-	constructor(id: number, name: string, seed?: number, isDummy?: boolean) {
+	// media
+	mediaType?: MediaType;
+	mediaSrc?: string;
+
+	constructor(id: number, name: string, seed?: number, isDummy?: boolean, mediaType?: MediaType, mediaSrc?: string) {
 		this.id = id;
 		this.name = name;
 		this.seed = seed ?? Math.random();
-		this.isDummy = isDummy ? true : false;
+		this.isDummy = isDummy ? true : false; // Converts from bool? to bool, undefined=false
+
+		this.mediaType = mediaType;
+		this.mediaSrc = mediaSrc;
 	}
 
 	setTo = (p: Entrant) => {
 		this.name = p.name;
 		this.id = p.id;
-    	this.seed = p.seed;
+		this.seed = p.seed;
 	};
 
 	get winner() {

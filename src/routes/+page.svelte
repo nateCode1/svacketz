@@ -1,17 +1,25 @@
 <script lang="ts">
 	import MatchCard from "./MatchCard.svelte";
-  import { Match, Entrant } from '$lib/typedef'
-  import type { EntrantInfo, MatchParticipant, MatchResult } from '../lib/typedef'
+  import { Match, Entrant, type MatchParticipant, MediaType } from '$lib/typedef'
 	import Bracket from './Bracket.svelte';
+	import AudioPlayer from "./AudioPlayer.svelte";
+	import VotingScreen from "./VotingScreen.svelte";
 
-  let rawParticipants = [
-    "david", "ahmad", "nathan", "luke", "asher", "olivia", "emily", "liam", "ava", "noah", "isabella", "mason", "sophia", "jackson", "oliver", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexanderiania", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "wyatt", "zoey", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree", "nathan", "sophie", "levi", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree"
-  ].slice(0,30);
+  // Basic test data
+  // let rawParticipants = [
+  //   "david", "ahmad", "nathan", "luke", "asher", "olivia", "emily", "liam", "ava", "noah", "isabella", "mason", "sophia", "jackson", "oliver", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexanderiania", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "wyatt", "zoey", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree", "nathan", "sophie", "levi", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree"
+  // ].slice(0,57);
+  // let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(n+1, i));
 
-  let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(n+1, i));
+  // Media test data ONLY SPOTIFY
+  let rawParticipantsMediaSpotify = [{name: "I/Me/Myself", src: "1lqj3wgPj8gHCdq46hUjvr"}, {name: "2econd 2ight 2eer", src: "4jd13hFvWAZKZpomQleZ8L"}, {name: "The Main Character", src: "2NHntfUPC17b0nmilAWl87"}]
+  let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.SPOTIFY, i.src))
+
   let allMatches: Match[] = [];
 
-  const pPerMatch = 4;
+  let votingScreen;
+
+  const pPerMatch = 2;
 
   const GenerateMatches = () => {
     //Fill in with dummy people, ensure their seed is worse
@@ -108,7 +116,7 @@
     })
   }
   GenerateMatches()
-  console.log("All ", allMatches)
+  // console.log("All ", allMatches)
 
   const roundNumberToTitle = (rn: number) => {
     let roundTitles: any = {
@@ -128,34 +136,25 @@
     allMatches[match.id] = match.copyOf;
   }
 
+  function runMatch() {
+
+  }
+
 </script>
 
-<h1>Welcome to Svaketz</h1>
 
-<div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 80vh;">
-  <Bracket participantsPerMatch={pPerMatch} entrants={allEntrants} matches={allMatches}/>
-  <!-- <div style="display: flex; flex-direction: row; align-items: stretch; height: fit-content;">
-    <div style="display: flex; flex-direction: column; justify-content: space-around;">
-       {#each allParticipants as p, i (p.id)}
-          <TournamentSlot seed={p.seed} displayText={p.name} index={i} roundNumber={0} numRounds={allMatches.length} />
-        {/each}
-     </div>
-    {#each allMatches as r, rn}
-      <div style="display: flex; flex-direction: column; justify-content: space-around;">
-        {#each r as match, i}
-          <TournamentSlot seed={match.resolved ? match.winner.seed : -1} displayText={match.winner?.name ?? "TBD"} index={i} roundNumber={rn + 1} numRounds={allMatches.length} /> 
-        {/each}
-      </div>
-    {/each}
-  </div> -->
+<div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
+  <VotingScreen bind:this={votingScreen} maxParticipantsPerMatch={pPerMatch} resolveMatch={resolveMatch}/>
+  
+  <Bracket startVoting={votingScreen?.startVoting} participantsPerMatch={pPerMatch} entrants={allEntrants} matches={allMatches}/>
 
-  <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 450px;">
+  <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
     <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
       {#each allMatches as match}
         <!-- {#if allMatches[rn].some(i => i.resolved == false)}
           <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
         {/if} -->
-        <MatchCard resolve={(winner) => {resolveMatch(match, winner)}} bind:match={match} />
+        <MatchCard bind:match={match} startVoting={votingScreen?.startVoting} />
       {/each}
   </div>
 </div>

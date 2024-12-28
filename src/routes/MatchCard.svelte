@@ -1,8 +1,9 @@
 <script lang="ts">
   import { Match, Entrant, type MatchParticipant } from '$lib/typedef'
+	import AudioPlayer from './AudioPlayer.svelte';
 
   export let match: Match;
-  export let resolve: (winner: Entrant) => void;
+  export let startVoting: (voteOn: Match) => void | null;
 </script>
 
 {#if !match.resolved && match.participants.every(i => i.data)}
@@ -10,9 +11,7 @@
     <h2>Match {match.id + 1}</h2>
     <p>Set winner</p>
     <div style="display: flex; width: 100%;">
-      {#each match.participants.filter(i => i.data && !i.data.isDummy) as participant}
-        <button on:click={() => {resolve(participant.data)}} style="margin: 3px;">{participant.data?.name ?? 'TBD'}</button>
-      {/each}
+      <button on:click={() => {startVoting(match)}} style="margin: 3px;">Resolve Match</button>
     </div>
   </div>
 {/if}

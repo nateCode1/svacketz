@@ -1,41 +1,52 @@
 <script lang="ts">
-  import { Match, Entrant, type MatchParticipant } from '$lib/typedef'
+  import { Match, Entrant, type MatchParticipant, type Connector } from '$lib/typedef'
 
   export let participantsPerMatch: number;
   export let matches: Match[];
   export let entrants: Entrant[];
-
+  export let startVoting: (voteOn: Match) => void | null;
+  
+  let connectors: Connector[] = [];
   let maxMatchesPerRound = entrants.length / participantsPerMatch;
   let rounds = Math.log2(entrants.length)
 
-  let matchWidth = 100;
+  let matchWidth = 140;
   let matchHeight = 20 + 20 * participantsPerMatch;
-  let gapX = 30;
-  let gapY = 20;
+  let gapX = 20;
+  let gapY = -30;
 
   let mousedown = false;
 
   let bracketArea: HTMLElement;
-  let allMatchElements = new Array(matches.length);
+  let allMatchElements = new Array(matches.length); 
 
   let debounceHideGlow: NodeJS.Timeout;
 
   //Function to set the position of feeder matches relative to the current match
   const setChildPositions = (match: Match): void => {
-    let totalY = 0;
     match.participants.forEach((child: MatchParticipant, i: number) => {
       if (child.from) {
         child.from.visualPos.x = match.visualPos.x - matchWidth - gapX;
 
         //using round we know how tall the total children of the match are
         let childrenTall = Math.pow(participantsPerMatch, child.from.round);
-        console.log(childrenTall)
+        // console.log(childrenTall)
         // console.log((childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5))
-        child.from.visualPos.y = match.visualPos.y + (childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5);
+        const yOffFromIndex = (i: number) => (childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5)
+        child.from.visualPos.y = match.visualPos.y + yOffFromIndex(i);
         setChildPositions(child.from);
 
-        // totalY += setChildPositions(child.from) + matchHeight;
-        // child.from.visualPos.y = match.visualPos.y + (setChildPositions(child.from) + matchHeight) * (i == 0 ? -1 : 1);
+        let matchConnector: Connector = {
+          thickness: 3, // Todo: make even or odd based on gap
+          tickSize: 10,
+          x: match.visualPos.x - gapX/2,
+          top: match.visualPos.y + yOffFromIndex(0) + matchHeight/2,
+          bottom: match.visualPos.y + yOffFromIndex(match.participants.length - 1) + matchHeight/2,
+          leftTicks: Array(match.participants.length).fill(0).map((_, i) => match.visualPos.y + yOffFromIndex(i) + matchHeight/2),
+          rightTicks: [match.visualPos.y + matchHeight/2]
+        };
+        
+        connectors.push(matchConnector);
       }
     })
   }
@@ -63,8 +74,18 @@
     matches.forEach(i => {
       i.visualPos.x -= minX;
       i.visualPos.y -= minY;
-    })    
-    // allMatchElements[0].style.border = "5px solid green"
+    })
+
+    connectors.forEach(i => {
+      i.x -= minX;
+      i.top -= minY;
+      i.bottom -= minY;
+      i.leftTicks = i.leftTicks?.map(i => i - minY)
+      i.rightTicks = i.rightTicks?.map(i => i - minY)
+    })
+    connectors = [...connectors] // trigger a rerender now that connectors is populated
+
+    console.log("All connectors", connectors)
   }
 
   const handleMousedown = (ev: any) => {
@@ -89,7 +110,7 @@
       });
     }
 
-    return // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return // !!!!!!!!!!!!!!!!!!!!!!!!!!!!! comment this to enable blob animations
     if (debounceHideGlow) clearTimeout(debounceHideGlow);
 
     debounceHideGlow = setTimeout(() => {
@@ -135,7 +156,10 @@
 <div role="mark" bind:this={bracketArea} on:mousedown={handleMousedown} on:mousemove={handleMousemove} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
   <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
     {#each matches as match, i}
-      <div class="hover" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${match.visualPos.x}px; top: ${match.visualPos.y}px;`}>
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
+      <div on:click={() => startVoting(match)} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${match.visualPos.x}px; top: ${match.visualPos.y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
           <div class="blob"></div>
           <div class="fake-blob"></div>
@@ -145,12 +169,28 @@
             </div>
             <div style="text-overflow: ellipsis; text-wrap: nowrap;">
               {#each match.participants as participant, j}
-                <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? 'W.O. ' + (1 + participant.from?.id ?? 'Oops')}</p>
+                <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? 'W.O. ' + (1 + (participant.from?.id ?? -2))}</p>
               {/each}
             </div>
           </div>
         </div>
       </div>
+    {/each}
+    {#each connectors as connector, i}
+        <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x}px; top: ${connector.top}px; width: ${connector.thickness}px; border-radius: 100px; height: ${connector.bottom - connector.top + connector.thickness}px;`}>
+        </div>
+        {#if connector.leftTicks}
+          {#each connector.leftTicks as tick}
+            <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x - connector.tickSize}px; top: ${tick}px; width: ${connector.tickSize + connector.thickness/2}px; border-radius: 100px; height: ${connector.thickness}px;`}>
+            </div>
+          {/each}
+        {/if}
+        {#if connector.rightTicks}
+          {#each connector.rightTicks as tick}
+            <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x}px; top: ${tick}px; width: ${connector.tickSize + connector.thickness/2}px; border-radius: 100px; height: ${connector.thickness}px;`}>
+            </div>
+          {/each}
+        {/if}
     {/each}
   </div>
 </div>
@@ -166,6 +206,7 @@
 
   p {
     margin: 0px;
+    font-size: 0.8em;
   }
 
   .card {
@@ -185,12 +226,16 @@
     padding: 5px;
     flex-shrink: 1;
     overflow: hidden;
-    background: rgba(0,0,0, 0.6);
+    background-color: rgba(0,0,0,0.6);
     backdrop-filter: blur(80px);
     transition: all 300ms ease-in-out;
     display: flex;
     margin: 3px;
     flex-grow: 1;
+  }
+  
+  .match-containter:hover .card-inner {
+    background-color: rgba(60, 60, 60, 0.6)
   }
 
   .fake-blob {
