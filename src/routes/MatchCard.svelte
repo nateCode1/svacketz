@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Match, Entrant, type MatchParticipant } from '$lib/typedef'
-	import AudioPlayer from './AudioPlayer.svelte';
 
   export let match: Match;
   export let startVoting: (voteOn: Match) => void | null;

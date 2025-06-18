@@ -1,15 +1,15 @@
 <script lang="ts">
   import { type Match, type MatchParticipant, Entrant, type MatchResult } from "$lib/typedef"; // Adjust the path as needed
   import { onMount } from "svelte";
-	import AudioPlayer from "./AudioPlayer.svelte";
-
+  import YoutubePlayer from "./YoutubePlayer.svelte";
+  
   export let match: Match | null = null;
   export let overlayVisible = false;
   export let maxParticipantsPerMatch = 2;
   export let resolveMatch: (match: Match, winner: Entrant) => void;
 
   export let close = () => {
-    stopAudio();
+    mediaManager.stop();
     overlayVisible = false;
   };
 
@@ -18,47 +18,20 @@
     overlayVisible = true;
     match = voteOn;
 
-    setFocusedParticipant(0);
-    debouncedCycleFocusedParticipant();
+    focusedParticipant = 0;
+    mediaManager.preview(match!.participants[focusedParticipant].data?.mediaSrc!)
   }
 
+  const previewNext = () => {
+    focusedParticipant++
+    focusedParticipant %= match!.participants.length;
+    mediaManager.preview(match!.participants[focusedParticipant].data?.mediaSrc!)
+  }
 
   let focusedParticipant: number = 0;
-  let audioManager: AudioPlayer;
-  let cycleFocusedParticipantInterval: NodeJS.Timeout | null;
+  let mediaManager: YoutubePlayer;
 
-  const debouncedCycleFocusedParticipant = () => {
-    if (cycleFocusedParticipantInterval != null)
-      clearInterval(cycleFocusedParticipantInterval)
-    if (overlayVisible)
-      cycleFocusedParticipantInterval = setInterval(cycleFocusedParticipant, 2000)
-  }
-
-  const setFocusedParticipant = (index: number) => {
-    focusedParticipant = index;
-    updateAudioToFocused();
-  }
-
-  const cycleFocusedParticipant = () => {
-    if (match) {
-      focusedParticipant++;
-      focusedParticipant %= match!.participants.length;
-      updateAudioToFocused();
-    }
-  }
-
-  const updateAudioToFocused = () => {
-    audioManager.pauseMedia();
-    let focused = match?.participants[focusedParticipant].data;
-    if (focused?.mediaSrc && focused?.mediaType)
-      audioManager.loadMedia(focused.mediaType, focused.mediaSrc)
-  }
-
-  const stopAudio = () => {
-    audioManager.pauseMedia();
-    if (cycleFocusedParticipantInterval)
-      clearInterval(cycleFocusedParticipantInterval)
-  }
+  onMount(() => mediaManager.init())
 
   // --------- End of Audio -----------
 
@@ -85,9 +58,12 @@
   }
 </script>
 
-{#each Array(maxParticipantsPerMatch) as _, i}
-  <AudioPlayer bind:this={audioManager} onPlaybackUpdate={debouncedCycleFocusedParticipant} />
-{/each}
+<YoutubePlayer 
+  maxPreviewLength={15} 
+  previewDoneCallback={previewNext} 
+  bind:this={mediaManager} 
+  ytPlayerId="yt-player-voting-screen"
+/>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -102,14 +78,16 @@
 
       <h3>Participants</h3>
       <div class="all-participant-containter">
-        {#each match.participants as participant}
-          <div class="participant-container">
+        {#each match.participants as participant, i}
+          <div class={`participant-container ${i == focusedParticipant ? 'participant-container-focused' : ''}`}>
             <h2>{participantDisplay(participant)}</h2>
             <button on:click={() => {selectWinner(participant.data)}}>Mark Winner</button>
           </div>
         {/each}
       </div>
-    {/if}
+
+      {/if}
+    <div id="yt-player-voting-screen"></div>
 
     {#if !match}
       <p>No match data available.</p>
@@ -159,8 +137,21 @@
 
   .participant-container {
     padding: 15px;
-    border: 2px solid white;
+    border: 2px solid gray;
+    color: gray;
     border-radius: 5px;
+    transition: 0.2s all;
+    margin-bottom: 20px;
+  }
+
+  .participant-container-focused {
+    border: 2px solid white;
+    color: white;
+    transform: scale(1.15);
+  }
+
+  #yt-player-voting-screen {
+    height: 400px;
   }
 
   h2 {

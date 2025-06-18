@@ -2,7 +2,6 @@
 	import MatchCard from "./MatchCard.svelte";
   import { Match, Entrant, type MatchParticipant, MediaType } from '$lib/typedef'
 	import Bracket from './Bracket.svelte';
-	import AudioPlayer from "./AudioPlayer.svelte";
 	import VotingScreen from "./VotingScreen.svelte";
 
   // Basic test data
@@ -12,11 +11,15 @@
   // let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(n+1, i));
 
   // Media test data ONLY SPOTIFY
-  let rawParticipantsMediaSpotify = [{name: "I/Me/Myself", src: "1lqj3wgPj8gHCdq46hUjvr"}, {name: "2econd 2ight 2eer", src: "4jd13hFvWAZKZpomQleZ8L"}, {name: "The Main Character", src: "2NHntfUPC17b0nmilAWl87"}]
-  let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.SPOTIFY, i.src))
+  // let rawParticipantsMediaSpotify = [{name: "I/Me/Myself", src: "1lqj3wgPj8gHCdq46hUjvr"}, {name: "2econd 2ight 2eer", src: "4jd13hFvWAZKZpomQleZ8L"}, {name: "The Main Character", src: "2NHntfUPC17b0nmilAWl87"}]
+  // let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.SPOTIFY, i.src))
+
+  // Media test data ONLY YOUTUBE
+  let rawParticipantsMediaSpotify = [{name: "Turnip Turns up", src: "tx2LXzM-Q2A"}, {name: "10 hours", src: "f1A7SdVTlok"}, {name: "Ohhhh!", src: "e6FPWcyREgo"}]
+  let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.YOUTUBE, i.src))
 
   let allMatches: Match[] = [];
-
+ 
   let votingScreen;
 
   const pPerMatch = 2;
