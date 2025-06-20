@@ -1,12 +1,12 @@
 <script lang="ts">
   import { type Match, type MatchParticipant, Entrant, type MatchResult } from "$lib/typedef"; // Adjust the path as needed
   import { onMount } from "svelte";
-  import YoutubePlayer from "./YoutubePlayer.svelte";
+	import MediaPlayer from "./Media/MediaPlayer.svelte";
   
   export let match: Match | null = null;
   export let overlayVisible = false;
-  export let maxParticipantsPerMatch = 2;
   export let resolveMatch: (match: Match, winner: Entrant) => void;
+  export let repeatPreviews = false;
 
   export let close = () => {
     mediaManager.stop();
@@ -18,22 +18,24 @@
     overlayVisible = true;
     match = voteOn;
 
-    focusedParticipant = 0;
-    mediaManager.preview(match!.participants[focusedParticipant].data?.mediaSrc!)
+    focusedParticipantIndex = 0;
+    if (match!.participants[focusedParticipantIndex].data?.media)
+      mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
   }
 
-  const previewNext = () => {
-    focusedParticipant++
-    focusedParticipant %= match!.participants.length;
-    mediaManager.preview(match!.participants[focusedParticipant].data?.mediaSrc!)
-  }
-
-  let focusedParticipant: number = 0;
-  let mediaManager: YoutubePlayer;
+  let focusedParticipantIndex: number = 0;
+  let mediaManager: MediaPlayer;
 
   onMount(() => mediaManager.init())
 
-  // --------- End of Audio -----------
+  const previewNext = () => {
+    focusedParticipantIndex++
+    if (repeatPreviews) focusedParticipantIndex %= match!.participants.length;
+    if (focusedParticipantIndex < match!.participants.length && match!.participants[focusedParticipantIndex].data?.media)
+      mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
+    else
+      mediaManager.stop()
+  }
 
   const participantDisplay = (participant: MatchParticipant): string => {
     if (participant.data) {
@@ -58,13 +60,6 @@
   }
 </script>
 
-<YoutubePlayer 
-  maxPreviewLength={15} 
-  previewDoneCallback={previewNext} 
-  bind:this={mediaManager} 
-  ytPlayerId="yt-player-voting-screen"
-/>
-
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="overlay {overlayVisible ? 'visible' : ''}" on:click="{close}">
@@ -79,15 +74,20 @@
       <h3>Participants</h3>
       <div class="all-participant-containter">
         {#each match.participants as participant, i}
-          <div class={`participant-container ${i == focusedParticipant ? 'participant-container-focused' : ''}`}>
+          <div class={`participant-container ${i == focusedParticipantIndex ? 'participant-container-focused' : ''}`}>
             <h2>{participantDisplay(participant)}</h2>
             <button on:click={() => {selectWinner(participant.data)}}>Mark Winner</button>
           </div>
         {/each}
       </div>
 
-      {/if}
-    <div id="yt-player-voting-screen"></div>
+    {/if}
+    
+    <MediaPlayer
+      maxPreviewLength={10} 
+      previewDoneCallback={previewNext} 
+      bind:this={mediaManager} 
+    />
 
     {#if !match}
       <p>No match data available.</p>
@@ -148,10 +148,6 @@
     border: 2px solid white;
     color: white;
     transform: scale(1.15);
-  }
-
-  #yt-player-voting-screen {
-    height: 400px;
   }
 
   h2 {

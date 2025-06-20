@@ -15,8 +15,11 @@
   // let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.SPOTIFY, i.src))
 
   // Media test data ONLY YOUTUBE
-  let rawParticipantsMediaSpotify = [{name: "Turnip Turns up", src: "tx2LXzM-Q2A"}, {name: "10 hours", src: "f1A7SdVTlok"}, {name: "Ohhhh!", src: "e6FPWcyREgo"}]
-  let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.YOUTUBE, i.src))
+  let rawParticipantsMediaYoutube = [{name: "Turnip Turns up", src: "tx2LXzM-Q2A"}, {name: "10 hours", src: "f1A7SdVTlok"}, {name: "Ohhhh!", src: "e6FPWcyREgo"}]
+  let allEntrants: Entrant[] =rawParticipantsMediaYoutube.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.YOUTUBE, i.src))
+  // add image
+  allEntrants.push(new Entrant(4, "Splendid Cats", -1, false, MediaType.IMAGE, "https://static.wikia.nocookie.net/8772c172-9f2a-4421-b6fa-ca4f7373fa1e/scale-to-width/755"))
+  allEntrants.push(new Entrant(5, "Wide boy", -2, false, MediaType.IMAGE, "https://www.shutterstock.com/image-photo/very-wide-night-panorama-london-260nw-232927153.jpg"))
 
   let allMatches: Match[] = [];
  
@@ -138,16 +141,11 @@
 
     allMatches[match.id] = match.copyOf;
   }
-
-  function runMatch() {
-
-  }
-
 </script>
 
 
 <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
-  <VotingScreen bind:this={votingScreen} maxParticipantsPerMatch={pPerMatch} resolveMatch={resolveMatch}/>
+  <VotingScreen bind:this={votingScreen} resolveMatch={resolveMatch}/>
   
   <Bracket startVoting={votingScreen?.startVoting} participantsPerMatch={pPerMatch} entrants={allEntrants} matches={allMatches}/>
 

@@ -1,7 +1,7 @@
 <!--
 
 
-    THIS IS CURRENTLY OUTDATED, BUT ALL THE CODE SHOULD BE FUNCTIONAL (mostly)
+    THIS COMPONENT CURRENTLY OUTDATED, BUT ALL THE CODE SHOULD BE FUNCTIONAL (mostly)
 
 
     The following code is from the old usage of this, and may be helpful

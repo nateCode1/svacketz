@@ -2,10 +2,6 @@
 	import { onMount } from 'svelte';
 	import { MediaType } from '$lib/typedef';
 
-	export const stop = () => {
-        youtubeFunctions.pause()
-    }
-
     export let previewDoneCallback: () => void;
 
 	export let ytPlayerId = 'youtube-player';
@@ -20,21 +16,29 @@
 		pause: () => {console.log('pauseYoutube not yet defined');}
 	};
 
-    export function preview(videoId: string) {
-        youtubeFunctions.setMedia(videoId);
-    }
-
-    function endCurrentPreview() {
+	function endCurrentPreview() {
         if (endPreviewTimeout)
             clearTimeout(endPreviewTimeout);
         youtubeFunctions.pause();
         previewDoneCallback();
     }
 
+	export function stop() {
+		if (endPreviewTimeout)
+            clearTimeout(endPreviewTimeout);
+        youtubeFunctions.pause();
+	}
+
+    export function preview(videoId: string) {
+        youtubeFunctions.setMedia(videoId);
+    }
+
+	export function clear() {
+		ready = false;
+	}
+
 	export function init() {
 		function onPlayerReady(event: any) {
-            ready = true;
-
 			youtubeFunctions.setMedia = (id: string) => {
                 ready = false;
 				player.loadVideoById(id);
@@ -90,19 +94,9 @@
 	<div id="youtube-player" />
 </div>
 
-<div style="position:absolute;top:0;left:0;background-color:white;">
-	<p>Youtube Player Included</p>
-</div>
-
 <style>
 	div {
 		margin: 0;
 		padding: 0;
-	}
-
-	p {
-		color: #2d2d2f;
-		margin: 2px;
-		font-size: 10px;
 	}
 </style>

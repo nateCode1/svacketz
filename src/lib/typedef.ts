@@ -42,15 +42,17 @@ export enum MediaType {
 	IMAGE, // currently unsupported
 }
 
+export type MediaInfo = {
+	mediaType: MediaType;
+	mediaSrc: string;
+}
+
 export class Entrant {
 	id: number;
 	name: string;
 	isDummy: boolean;
 	seed: number;
-
-	// media
-	mediaType?: MediaType;
-	mediaSrc?: string;
+	media?: MediaInfo;
 
 	constructor(id: number, name: string, seed?: number, isDummy?: boolean, mediaType?: MediaType, mediaSrc?: string) {
 		this.id = id;
@@ -58,8 +60,12 @@ export class Entrant {
 		this.seed = seed ?? Math.random();
 		this.isDummy = isDummy ? true : false; // Converts from bool? to bool, undefined=false
 
-		this.mediaType = mediaType;
-		this.mediaSrc = mediaSrc;
+		if (mediaType != undefined && mediaSrc != undefined) {
+			this.media = {
+				mediaSrc: mediaSrc,
+				mediaType: mediaType
+			}
+		}
 	}
 
 	setTo = (p: Entrant) => {
