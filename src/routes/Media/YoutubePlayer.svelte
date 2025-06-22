@@ -19,6 +19,7 @@
 	function endCurrentPreview() {
         if (endPreviewTimeout)
             clearTimeout(endPreviewTimeout);
+		ready = false;
         youtubeFunctions.pause();
         previewDoneCallback();
     }
