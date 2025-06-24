@@ -352,18 +352,207 @@ This is just an example, but it should provide some intuition on the inherent is
 No perfect solution is available, but the best solution is to add placeholder participants as required in each round. This means following the procedure described in the [Single Round Non-Ideal Seeding](#single-round-non-ideal-seeding) section before seeding each round.
 
 ### Pseudocode
-// TODO: Multiple rounds pseudocode
+TODO: Multiple rounds pseudocode
 
 # Double Elimination
+In a single elimination bracket, losing a single match causes a participant to be eliminated fromt the bracket, hence the name. A double elimination bracket gives each participant a second chance, meaning two losses are required to be eliminated*.
+
+<details>
+  <summary>*Two losses aren't always required</summary>
+  
+  TODO: Write about bracket reset here
+</details>
+<br>
+
+In effect this creates two intertwined brackets, commonly referred to as "winner's bracket" and "loser's bracket". Participants in the winners bracket have yet to lose a single match, whereas those in losers have already lost one. Losing a match in winner's bracket will send a participant to loser's bracket, and losing a match in loser's bracket will eliminate the participant. For now we will assume all participants begin in the winner's bracket.
+
+
+### Case 1: 2 to 1 Ideal
+We will first examine the double elimination bracket in the context of a familiar 2 PPM, 1 WPM bracket. Ideal in this case refers to satisfying the constraint: $\:\log_2{(Num Participants)}\:\%\:1==\:0$. For a sufficiently sized example we will use 8 participants. Here are the first round winner's bracket matchups:
+
+```
+1st Round Winner's:
+1v8
+2v7
+3v6
+4v5
+```
+
+For now we will assume the higher seed wins in each matchup. This means 1,2,3,4 all win a match, and 5,6,7,8 all lose a match. Using the same single round seeding algorithm as before will yield the following 2nd round winner's and 1st round loser's matches:
+
+```
+2nd Round Winner's:
+1v4
+2v3
+
+1st Round Loser's:
+5v8
+6v7
+```
+
+Following our same higher-seed-wins assumption means that after these matches resolve: `1,2` have not lost a match, whereas `3,4,5,6` have all lost a single match, and `7,8` are eliminated. Generating the next round of matches gives:
+
+```
+3rd Round Winner's:
+1v2
+
+2nd Round Loser's:
+3v6
+4v5
+```
+
+After this `1` has not lost a match, `2,3,4` have lost one, `5,6,7,8` are eliminated. Here we run into a problem, we have an odd number of participants, both in the winner's and loser's bracket. So we'll add an extra match between `3` and `4` in the lower bracket before continuing. After that extra match, only `1,2,3` will remain. `2,3` in loser's bracket, `1` in winner's bracket.
+
+The final two required matches are between `2,3` in loser's bracket, and the winner of that match against `1` in grand finals.
+
+Lets see that in a diagram for some clarity:
+```mermaid
+graph LR
+  W1["1v8"] --> W5["1v4"]
+  W2["4v5"] --> W5
+
+  W3["2v7"] --> W6["2v3"]
+  W4["3v6"] --> W6
+
+  W5 --> W7["1v2"]
+  W6 --> W7
+
+  W7 --> W8["1v2"]
+
+  L1["5v8"] --> L3["3v6"]
+  L2["6v7"] --> L4["4v5"]
+
+  L3 --> L5["3v4"]
+  L4 --> L5
+
+  L5 --> L6["2v3"]
+
+  L6 --> W8
+```
+
+This provides some valuable insights:
+1. The winner's bracket looks identical to a single elimination bracket, up until the grand finals.
+2. The loser's bracket requires more rounds than the winner's bracket.
+3. The number of matches in the loser's bracket follows a unique pattern.
+
+Let's begin with insight #1. This is helpful knowledge as it lets us effectively eliminate half the problem. We already have the knowledge to create a single elimination bracket, and therefore we know how to create the winner's bracket. Now we can focus in on the loser's bracket.
+
+Insight #2 tells us that there is something different about the loser's bracket, and that unique aspect is the "extra" match we had to add: `3v4`. Remember that we added this because we had an odd number of participants in loser's bracket, meaning not all participants could be placed into a match. The match was between `3` and `4` because those were the two already in loser's bracket, so it makes more sense that they be placed in a match together, which determines which one will continue on to face `2`.
+
+Lets analyze how many participants are present in each round of the loser's bracket to address why this happens. If we begin a bracket with `P` participants in winner's bracket, the first round of loser's bracket will have `P/2` participants, all of which come from winner's. Round two of loser's will still have `P/2` participants: `P/4` from round 1 of loser's, and `P/4` from round 2 of winner's. Let's follow this pattern:
+
+| Loser's Bracket Round Num | From Previous Round  | From Winner's Bracket | Total Participants |
+| ------------------------- | -------------------- | --------------------- | ------------------ |
+| 1 | N/A | P/2 | P/2 |
+| 2 | P/4 | P/4 | P/2 |
+| 3 | P/4 | P/8 | 3P/8 |
+
+And here is our issue: doesn't make sense to conduct a round with `3P/8` participants, as it will create inequality in the matches, where some are between two loser's bracket teams, and some are between a loser's bracket team, and a team that just lost in winner's bracket. Its also possible to end up with an odd number of participants when you have `3P/8`, which exaggerates the issue.
+
+So this reveals an important constraint: every round in the loser's bracket should have the same number of participants from the previous round of loser's bracket, as it does from winners bracket (first round excepted).
+
+But this is impossible, right now we have no wiggle room, and always end up with that `3P/8` problem.
+
+So lets ammend that: every round in losers round should either have the same number of participants from the previous round of loser's bracket **OR** it should only have participants from the previous round of loser's bracket (firsr round excepted).
+
+This gives us something to work with. An "extra" match as we called it before, where no new participants coming from winner's are introduced, only those from the previous round of loser's. We will redo our table, and label these "extra" rounds as `x.5`. So if we have an extra round after round `2`, it will be labelled `2.5`.
+
+| Loser's Bracket Round Num | From Previous Round  | From Winner's Bracket | Total Participants |
+| ------------------------- | -------------------- | --------------------- | ------------------ |
+| 1   | -   | P/2 | P/2 |
+| 2   | P/4 | P/4 | P/2 |
+| 2.5 | P/4 | -   | P/4 |
+| 3   | P/8 | P/8 | P/4 |
+| 3.5 | P/8 | -   | P/8 |
+| 4   | P/16| P/16| P/8 |
+*And so on and soforth*
+
+Hopefully, this makes the trend clear. Looking at the last column we see that every two rounds, the number of participants halves. This is in contrast to the trend in winner's bracket where the number of participants halves every round. This discrepency is because loser's bracket is constantly being fed additional participants by those losing in winner's bracket. Interrestingly, this "halve every two rounds" trend holds even for the first two rounds, which have hitherto been a little bit of an exception.
+
+One more small detail is that in all these matches, the winner will always get the higher seed going forward, and the loser will get the lower seed. As an example if `1` goes up against `8`, and `8` wins, it gets the top seed going forward, whereas `1` will get the 8th seed.
+
+This gives us all the information we need to create an ideal 2 to 1 bracket.
+
+### Case 2: 2 to 1 Non-Ideal
+Here we run into a conceptual issue. To deal with non-ideal numbers of participants, we have hitherto added placeholders (dentoed as BYEs) to accomidate have non-ideal numbers of participants. This worked well because any placeholder would automatically lose any match in which it is present, at which point it would exit the bracket and we would no longer need to consider it. Now it is instead sent to the lower bracket.
+
+Lets take a look at that same bracket from eariler, but with only 6 participants:
+
+*A `X` is used to represent a BYE.*
+
+```mermaid
+graph LR
+  W1["1vX"] --> W5["1v4"]
+  W2["4v5"] --> W5
+
+  W3["2vX"] --> W6["2v3"]
+  W4["3v6"] --> W6
+
+  W5 --> W7["1v2"]
+  W6 --> W7
+
+  W7 --> W8["1v2"]
+
+  L1["5vX"] --> L3["4v5"]
+  L2["6vX"] --> L4["3v6"]
+
+  L3 --> L5["3v4"]
+  L4 --> L5
+
+  L5 --> L6["2v3"]
+
+  L6 --> W8
+```
+
+In this version of the bracket the most notable difference is that the first round of matches in the lower bracket is completely unnecessary. This isn't a perfect outcome, as it would be prefered that those losing earlier in the winner's bracket have more matches in the loser's bracket, but this is an acceptable compromise.
+
+However, if we look again at the same setup, but with only 7 participants, there is a larger issue:
+
+```mermaid
+graph LR
+  W1["1vX"] --> W5["1v4"]
+  W2["4v5"] --> W5
+
+  W3["2v7"] --> W6["2v3"]
+  W4["3v6"] --> W6
+
+  W5 --> W7["1v2"]
+  W6 --> W7
+
+  W7 --> W8["1v2"]
+
+  L1["5vX"] --> L3["4v5"]
+  L2["6v7"] --> L4["3v6"]
+
+  L3 --> L5["3v4"]
+  L4 --> L5
+
+  L5 --> L6["2v3"]
+
+  L6 --> W8
+```
+
+This contains a much more important issue. In the loser's bracket 1st round: `5` has a BYE, whereas `6,7` do not. Intuitively this may seem off in some way, unfortunately there is no solution which solves this more than it creates other issues. By the logic of how we've been handling non-ideal numbers of participants thus far, this inequality of matches is ostensibly acceptable, but suboptimal.
+
+### Case 3: N to M
+As is the trend, the existence of a loser's bracket can complicate what we've already covered. The key complexity of N to 1 is that the number of participants introduced into the loser's bracket by each round of the winner's bracket is equal to `PPM-WPM`. This means that for things to behave nicely, we not only need `PPM % WPM == 0`, but also `(PPM-WPM) % WPM == 0`.
+
+To understand what this means, and why its the case, we'll look at a 3 PPM, 1 WPM bracket.
+
+
 
 # TODO:
 - Rationalize why m to n case is the way it is
 - Intro explaining what seeding is, and how everything is about tradeoffs in how important it should be
-- Figure out more items for todo list
+- Clarify what increasing and decreasing order means
+- Add a glossary
 
 # Appendicies
 ## Appendix 1: Why a 3 to 2 Bracket Always Requires Non 1st Round BYEs
 Assuming a bracket of `P` participants with 3 PPM (Participants per Match) and 2 WPM (Winners per Match) it is impossible to create a bracket without BYEs in rounds that aren't the first round, provided `P > 3`. The reason why relates to prime factorization and the relationship between participants in one round and the next.
 
-In a single round every 3 participants produce 2 winners (which move on to the next round). This means that each round will have `2/3 * Previous Round Participants`. This means that for each round after the first, the prime factorization of the number of participants in that round must contain a 2.
+In a single round every 3 participants produce 2 winners (which move on to the next round). This means that each round will have `2/3 * Previous Round Participants`. This means that for each round after the first, the prime factorization of the number of participants in that round will contain a 2.
 
+This is where the issue lies, if at any point the number of participants in a round isn't evenly divisible by 3, then it will be impossible to create matches for that round without adding a placeholder participant (BYE). A number is only divisible by 3 if its prime factorization includes a 3. Because we are introducing a 2 into the prime factorization with each subsequent round, it is inevitable that eventually the prime facotrization will include at least two 2s, and no 3s, at which point it will be required to add a placeholder.
+
+This logic can similarily explain why this issue doesn't occur when `PPM % WPM == 0`. If `PPM % WPM == 0`, then the relationship between number of participants in one round and the next can always be expressed as `1/N * Previous Round Participants`. This means that when multiplying, we are multiplying in a 1, which does not affect the prime factorization, and thus doesn't introduce any indivisible component into the number of participants.
