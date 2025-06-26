@@ -36,7 +36,7 @@ The following pseudocode describes an algorithmic way to make these assignments:
 
   The code assumes that allParticipants is sorted according to seed (increasing). This means the top seed is at index 0 in allParticipants.
 
-  Participant and Match are both assumed to be classes, their implementation is omitted because it's not the focus here. Similarily the details of the Assign function aren't included, as they aren't criticial to understand whats going on. Minimal requirements for each class are listed below:
+  Participant and Match are both assumed to be classes, their implementation is omitted because it's not the focus here. Similarly the details of the Assign function aren't included, as they aren't critical to understand whats going on. Minimal requirements for each class are listed below:
   - Participant must have some identifying information for the participant, and optionally their seed.
   - Match must contain a list of participants, and later on will require the ability to point to other matches. It must implement the Assign method, which takes a Participant as an argument, and adds the participant to its own list of participants for this particular match.
 
@@ -191,7 +191,7 @@ This covers the case of seeding a single round of matches with n participants an
 
 Most of the procedures for single round non-ideal seeding match those for the ideal case. For our previous methods to apply, we need a number of participants that is divisible by the number of participants per match (denoted as n).
 
-To accomidate this, some matches will be missing one or more participants. In the case of a bracket with 2 participants per match this is commonly referred to as a BYE round. Going forward BYE will refer to a dummy participant which doesn't actually participant, but is a placeholder for within the bracket.
+To accommodate this, some matches will be missing one or more participants. In the case of a bracket with 2 participants per match this is commonly referred to as a BYE round. Going forward BYE will refer to a dummy participant which doesn't actually participant, but is a placeholder for within the bracket.
 
 Lets look at a 2 participant per match example to begin. Suppose we have participants {1,2,3,4,5}. For our methods to work we will need the number of participants to be divisible by 2, which 5 is not. This constraint can be formalized as:
 
@@ -232,7 +232,7 @@ When each match only has a single winner, the winner of the match should be give
   
   Take the bracket below as an example. Assume the winners from the first round are 1,2,3,4. This means the next round would have 1v4, and 2v3.
 
-  However, if we assume the winners are 8,2,3,4 the next round would be 2v8, 3v4. This means that depens on who wins, 2 and 3 either go to different matches, or the same match, which means no definite bracket can be drawn ahead of time.
+  However, if we assume the winners are 8,2,3,4 the next round would be 2v8, 3v4. This means that depends on who wins, 2 and 3 either go to different matches, or the same match, which means no definite bracket can be drawn ahead of time.
 
   This solution would also only make sense in the case where seeding is strongly defined, as it will provide even greater advantage to participants with a better seed, which may be undesirable if seeding is poorly defined or perhaps even random.
 </details>
@@ -282,7 +282,7 @@ graph LR
 ```
 Unfortunately this leads to seeding mostly breaking down after the first round, and it gets worse with larger brackets.
 
-Solution 2 preserves the integrity of seeding in rounds beyond the first, however, it results in winners from a single match being in different matches in subsequent rounds, thus making it difficult to visualize the connecitons. An example of this solution is shown below, in the same style as the solution 1 bracket:
+Solution 2 preserves the integrity of seeding in rounds beyond the first, however, it results in winners from a single match being in different matches in subsequent rounds, thus making it difficult to visualize the connections. An example of this solution is shown below, in the same style as the solution 1 bracket:
 ```mermaid
 graph LR
   A1["1,5,12,16"] -->
@@ -301,11 +301,11 @@ graph LR
   Q1 --> F1["1,2,3,4"]
   Q2 --> F1
 ```
-Another flaw in this approach is that it requires that each match not only output winners, but that it output winners in order from "most winner" to "least winner". If that information is not available, it would be possible to use the seeding to determine which winners should be awareded a higher seed in subsequent rounds.
+Another flaw in this approach is that it requires that each match not only output winners, but that it output winners in order from "most winner" to "least winner". If that information is not available, it would be possible to use the seeding to determine which winners should be awarded a higher seed in subsequent rounds.
 
 It bears mention that winners from a single match not being placed together in subsequent matches could be viewed as a positive depending on the application.
 
-Either of these solutions is valid, however when looking at [Case 2](#case-2-participants-per-match-not-divisible-by-winners-per-match), solution 2 is prefered, as in that case it is impossible to have all winners from a match end up in the same match in the next round.
+Either of these solutions is valid, however when looking at [Case 2](#case-2-participants-per-match-not-divisible-by-winners-per-match), solution 2 is preferred, as in that case it is impossible to have all winners from a match end up in the same match in the next round.
 
 <details>
   <summary>What about having a single winner?</summary>
@@ -340,14 +340,14 @@ For a given number of participants `P`, and a PPM to WPM ratio of `PPM / WPM = B
 $B^{\left(\log_{B}\left(P\right)+1-\operatorname{mod}\left(\log_{B}\left(P\right),1\right)\right)} - P
 $
 
-Unfortunately, as with before when `PPM % WPM != 0` there are additional considerations. The result is that it is impossible to only have 1st round BYEs. With the previous method, placeholder contestants (BYEs) would only appear in the first round. However, in this case, it is unavoidalbe to have BYEs in subsequent rounds. To illustrate this we will take a 3 PPM, 2 WPM bracket with 15 total participants.
+Unfortunately, as with before when `PPM % WPM != 0` there are additional considerations. The result is that it is impossible to only have 1st round BYEs. With the previous method, placeholder contestants (BYEs) would only appear in the first round. However, in this case, it is unavoidable to have BYEs in subsequent rounds. To illustrate this we will take a 3 PPM, 2 WPM bracket with 15 total participants.
 
 ```
 1st Round: 15 Participants => 5 Matches => 10 Winners
 2nd Round: 10 Participants => 3 & 1/3 Matches => INVALID
 ```
 
-This is just an example, but it should provide some intuition on the inherent issue at hand, a more rigourous explination is viewable in [Appendix 1](#appendix-1-why-a-3-to-2-bracket-always-requires-non-1st-round-byes).
+This is just an example, but it should provide some intuition on the inherent issue at hand, a more rigorous explanation is viewable in [Appendix 1](#appendix-1-why-a-3-to-2-bracket-always-requires-non-1st-round-byes).
 
 No perfect solution is available, but the best solution is to add placeholder participants as required in each round. This means following the procedure described in the [Single Round Non-Ideal Seeding](#single-round-non-ideal-seeding) section before seeding each round.
 
@@ -453,7 +453,7 @@ So this reveals an important constraint: every round in the loser's bracket shou
 
 But this is impossible, right now we have no wiggle room, and always end up with that `3P/8` problem.
 
-So lets ammend that: every round in losers round should either have the same number of participants from the previous round of loser's bracket **OR** it should only have participants from the previous round of loser's bracket (firsr round excepted).
+So lets amend that: every round in losers round should either have the same number of participants from the previous round of loser's bracket **OR** it should only have participants from the previous round of loser's bracket (first round excepted).
 
 This gives us something to work with. An "extra" match as we called it before, where no new participants coming from winner's are introduced, only those from the previous round of loser's. We will redo our table, and label these "extra" rounds as `x.5`. So if we have an extra round after round `2`, it will be labelled `2.5`.
 
@@ -465,18 +465,19 @@ This gives us something to work with. An "extra" match as we called it before, w
 | 3   | P/8 | P/8 | P/4 |
 | 3.5 | P/8 | -   | P/8 |
 | 4   | P/16| P/16| P/8 |
+
 *And so on and soforth*
 
-Hopefully, this makes the trend clear. Looking at the last column we see that every two rounds, the number of participants halves. This is in contrast to the trend in winner's bracket where the number of participants halves every round. This discrepency is because loser's bracket is constantly being fed additional participants by those losing in winner's bracket. Interrestingly, this "halve every two rounds" trend holds even for the first two rounds, which have hitherto been a little bit of an exception.
+Hopefully, this makes the trend clear. Looking at the last column we see that every two rounds, the number of participants halves. This is in contrast to the trend in winner's bracket where the number of participants halves every round. This discrepancy is because loser's bracket is constantly being fed additional participants by those losing in winner's bracket. Interestingly, this "halve every two rounds" trend holds even for the first two rounds, which have hitherto been a little bit of an exception.
 
 One more small detail is that in all these matches, the winner will always get the higher seed going forward, and the loser will get the lower seed. As an example if `1` goes up against `8`, and `8` wins, it gets the top seed going forward, whereas `1` will get the 8th seed.
 
 This gives us all the information we need to create an ideal 2 to 1 bracket.
 
 ### Case 2: 2 to 1 Non-Ideal
-Here we run into a conceptual issue. To deal with non-ideal numbers of participants, we have hitherto added placeholders (dentoed as BYEs) to accomidate have non-ideal numbers of participants. This worked well because any placeholder would automatically lose any match in which it is present, at which point it would exit the bracket and we would no longer need to consider it. Now it is instead sent to the lower bracket.
+Here we run into a conceptual issue. To deal with non-ideal numbers of participants, we have hitherto added placeholders (denoted as BYEs) to accommodate have non-ideal numbers of participants. This worked well because any placeholder would automatically lose any match in which it is present, at which point it would exit the bracket and we would no longer need to consider it. Now it is instead sent to the lower bracket.
 
-Lets take a look at that same bracket from eariler, but with only 6 participants:
+Lets take a look at that same bracket from earlier, but with only 6 participants:
 
 *A `X` is used to represent a BYE.*
 
@@ -504,7 +505,7 @@ graph LR
   L6 --> W8
 ```
 
-In this version of the bracket the most notable difference is that the first round of matches in the lower bracket is completely unnecessary. This isn't a perfect outcome, as it would be prefered that those losing earlier in the winner's bracket have more matches in the loser's bracket, but this is an acceptable compromise.
+In this version of the bracket the most notable difference is that the first round of matches in the lower bracket is completely unnecessary. This isn't a perfect outcome, as it would be preferred that those losing earlier in the winner's bracket have more matches in the loser's bracket, but this is an acceptable compromise.
 
 However, if we look again at the same setup, but with only 7 participants, there is a larger issue:
 
@@ -537,9 +538,20 @@ This contains a much more important issue. In the loser's bracket 1st round: `5`
 ### Case 3: N to M
 As is the trend, the existence of a loser's bracket can complicate what we've already covered. The key complexity of N to 1 is that the number of participants introduced into the loser's bracket by each round of the winner's bracket is equal to `PPM-WPM`. This means that for things to behave nicely, we not only need `PPM % WPM == 0`, but also `(PPM-WPM) % WPM == 0`.
 
-To understand what this means, and why its the case, we'll look at a 3 PPM, 1 WPM bracket.
+To understand what this means, and why its the case, we'll look at a 3 PPM, 1 WPM bracket. If we did this with any appreciable number of participants, the diagram would be too large to parse, so we'll make it a table. Keep in mind that for every match, 2 participants are losers, and only 1 is a winner.
 
+| Loser's Bracket Round Num | From Previous Round  | From Winner's Bracket | Total Participants |
+| ------------------------- | -------------------- | --------------------- | ------------------ |
+| 1   | -     | 2P/3  | 2P/3  |
+| 2   | 2P/9  | 2P/9  | 4P/9  |
 
+Here we observe the first issue, in the 2 to 1 case the implicit target was to have an equal number of participants from the previous loser's bracket round as from the winner's bracket. However, because this isn't directly possible, the requirement was revised to a combination of two requirements:
+1. A participant's first match after being sent to loser's bracket, should be against a participant from the previous round of loser's bracket.
+1. For each round of loser's bracket, every match in that round should have the same number of participants from previous loser's bracket rounds
+
+In simpler terms this means every round in loser's bracket either has no new participants from winner's bracket, or is 50% new participants from winner's bracket.
+
+This requirement needs reevaluating for the 3 to 1 case. The intuitive expansion of our previous rules is to have 
 
 # TODO:
 - Rationalize why m to n case is the way it is
