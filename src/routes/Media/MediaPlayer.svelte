@@ -5,6 +5,7 @@
 	import { MediaType, type MediaInfo } from '$lib/typedef';
 	import YoutubePlayer from './YoutubePlayer.svelte';
 	import ImagePlayer from './ImagePlayer.svelte';
+	import TextPlayer from './TextPlayer.svelte';
 
     export let previewDoneCallback: () => void;
 
@@ -15,6 +16,9 @@
 
     let imagePlayer: ImagePlayer;
     let imageReady: boolean = false;
+    
+    let textPlayer: ImagePlayer;
+    let textReady: boolean = false;
 
     let currentMediaType: MediaType | null = null;
 
@@ -23,6 +27,8 @@
             youtubePlayer.stop();
         if (currentMediaType == MediaType.IMAGE)
             imagePlayer.stop();
+        if (currentMediaType == MediaType.TEXT)
+            textPlayer.stop();
 	}
 
     export function preview(media: MediaInfo) {
@@ -31,11 +37,14 @@
             youtubePlayer.preview(media.mediaSrc);
         if (currentMediaType == MediaType.IMAGE)
             imagePlayer.preview(media.mediaSrc);
+        if (currentMediaType == MediaType.TEXT)
+            textPlayer.preview(media.mediaSrc);
     }
 
 	export function init() {
 		youtubePlayer.init()
         imagePlayer.init()
+        textPlayer.init()
 	};
 </script>
 
@@ -59,10 +68,19 @@
             <ImagePlayer
                 bind:this={imagePlayer}
                 bind:ready={imageReady}
-                maxPreviewLength={maxPreviewLength * 1000}
+                maxPreviewLength={maxPreviewLength}
                 previewDoneCallback={previewDoneCallback} 
             />
-            <!-- TODODODODODODODOODOD ^^^^^^^^^^^^^^^^^^^^^^^^^^ TOODODODODODODOODODODODODODODOODODODODOODODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO -->
+        </div>
+    </div>
+    <div class={`${textReady && currentMediaType == MediaType.TEXT ? "visible" : ""} media`}>
+        <div class="image-container">
+            <TextPlayer
+                bind:this={textPlayer}
+                bind:ready={textReady}
+                maxPreviewLength={maxPreviewLength}
+                previewDoneCallback={previewDoneCallback} 
+            />
         </div>
     </div>
     <div class="no-media-text">

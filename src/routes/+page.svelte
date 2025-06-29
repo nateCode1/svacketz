@@ -21,13 +21,18 @@
   // add image
   allEntrants.push(new Entrant("Splendid Cats", -1, false, MediaType.IMAGE, "https://static.wikia.nocookie.net/8772c172-9f2a-4421-b6fa-ca4f7373fa1e/scale-to-width/755"))
   allEntrants.push(new Entrant("Wide boy", -2, false, MediaType.IMAGE, "https://www.shutterstock.com/image-photo/very-wide-night-panorama-london-260nw-232927153.jpg"))
+  allEntrants.push(new Entrant("Texty lad", -3, false, MediaType.TEXT, `
+  # I'd like to say hello
+  *and welcome*
+  
+  good day that is __my__ name
+  `))
 
   let allMatches: Match[] = [];
  
   let votingScreen;
 
   const pPerMatch = 2;
-
 
   const GenerateMatches = () => {
     //Fill in with dummy people, ensure their seed is worse

@@ -18,6 +18,7 @@ export enum MediaType {
 	YOUTUBE,
 	SPOTIFY, // currently unsupported
 	IMAGE,
+	TEXT,
 }
 
 export type MediaInfo = {
