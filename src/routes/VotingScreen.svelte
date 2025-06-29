@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { type Match, type MatchParticipant, Entrant, type MatchResult } from "$lib/typedef"; // Adjust the path as needed
   import { onMount } from "svelte";
 	import MediaPlayer from "./Media/MediaPlayer.svelte";
+	import { Match, Entrant, type MatchParticipant, type MatchResult } from "$lib/bracket";
   
   export let match: Match | null = null;
   export let overlayVisible = false;

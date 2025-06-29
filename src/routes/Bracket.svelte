@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Match, Entrant, type MatchParticipant, type Connector } from '$lib/typedef'
+  import { Match, Entrant, type MatchParticipant } from '$lib/bracket'
+  import { type Connector } from '$lib/typedef';
 
   export let participantsPerMatch: number;
   export let matches: Match[];

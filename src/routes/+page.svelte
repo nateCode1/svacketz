@@ -1,25 +1,26 @@
 <script lang="ts">
 	import MatchCard from "./MatchCard.svelte";
-  import { Match, Entrant, type MatchParticipant, MediaType } from '$lib/typedef'
-	import Bracket from './Bracket.svelte';
+  import { MediaType } from '$lib/typedef'
+  import { Match, Entrant, Bracket, type MatchParticipant } from "$lib/bracket";
+	import BracketUI from './Bracket.svelte';
 	import VotingScreen from "./VotingScreen.svelte";
 
   // Basic test data
   // let rawParticipants = [
   //   "david", "ahmad", "nathan", "luke", "asher", "olivia", "emily", "liam", "ava", "noah", "isabella", "mason", "sophia", "jackson", "oliver", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexanderiania", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "wyatt", "zoey", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree", "nathan", "sophie", "levi", "amelia", "ethan", "mia", "logan", "lucas", "harper", "abigail", "alexander", "ella", "carter", "avery", "henry", "mila", "owen", "scarlett", "wyatt", "eva", "jayden", "leah", "nicholas", "zoey", "caleb", "penelope", "isaac", "lily", "gabriel", "chloe", "jaxon", "madison", "joseph", "aubrey", "dylan", "adeline", "jaden", "layla", "gavin", "riley", "michael", "grace", "elijah", "hazel", "jacob", "ella", "julian", "lillian", "adam", "aria", "ryan", "aubree"
   // ].slice(0,57);
-  // let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(n+1, i));
+  // let allEntrants: Entrant[] = rawParticipants.map((i: string, n) => new Entrant(i));
 
   // Media test data ONLY SPOTIFY
   // let rawParticipantsMediaSpotify = [{name: "I/Me/Myself", src: "1lqj3wgPj8gHCdq46hUjvr"}, {name: "2econd 2ight 2eer", src: "4jd13hFvWAZKZpomQleZ8L"}, {name: "The Main Character", src: "2NHntfUPC17b0nmilAWl87"}]
   // let allEntrants: Entrant[] =rawParticipantsMediaSpotify.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.SPOTIFY, i.src))
 
-  // Media test data ONLY YOUTUBE
+  // Media test data
   let rawParticipantsMediaYoutube = [{name: "Turnip Turns up", src: "tx2LXzM-Q2A"}, {name: "10 hours", src: "f1A7SdVTlok"}, {name: "Ohhhh!", src: "e6FPWcyREgo"}]
-  let allEntrants: Entrant[] =rawParticipantsMediaYoutube.map((i: any, n) => new Entrant(n+1, i.name, n, false, MediaType.YOUTUBE, i.src))
+  let allEntrants: Entrant[] =rawParticipantsMediaYoutube.map((i: any, n) => new Entrant(i.name, n, false, MediaType.YOUTUBE, i.src))
   // add image
-  allEntrants.push(new Entrant(4, "Splendid Cats", -1, false, MediaType.IMAGE, "https://static.wikia.nocookie.net/8772c172-9f2a-4421-b6fa-ca4f7373fa1e/scale-to-width/755"))
-  allEntrants.push(new Entrant(5, "Wide boy", -2, false, MediaType.IMAGE, "https://www.shutterstock.com/image-photo/very-wide-night-panorama-london-260nw-232927153.jpg"))
+  allEntrants.push(new Entrant("Splendid Cats", -1, false, MediaType.IMAGE, "https://static.wikia.nocookie.net/8772c172-9f2a-4421-b6fa-ca4f7373fa1e/scale-to-width/755"))
+  allEntrants.push(new Entrant("Wide boy", -2, false, MediaType.IMAGE, "https://www.shutterstock.com/image-photo/very-wide-night-panorama-london-260nw-232927153.jpg"))
 
   let allMatches: Match[] = [];
  
@@ -27,10 +28,11 @@
 
   const pPerMatch = 2;
 
+
   const GenerateMatches = () => {
     //Fill in with dummy people, ensure their seed is worse
     while (Math.log10(allEntrants.length) / Math.log10(pPerMatch) % 1 != 0)
-      allEntrants.push(new Entrant(allEntrants[allEntrants.length - 1].id + 1, "BYE", Infinity, true))
+      allEntrants.push(new Entrant("BYE", Infinity, true))
 
     //Sort participants by seed
     let sortedParticipants = [... allEntrants].sort((a,b) => a.seed - b.seed);
@@ -59,8 +61,6 @@
     for (let i = 0; i < bufferSize; i++) matchesToBeResolved[i] = new Array(pPerMatch - 1).fill(false);
     let currMatchId = 0;
 
-    console.log(matchesToBeResolved)
-
     //Utility to make a match
     const createMatch = (round: number, participants: MatchParticipant[]) => {
       let currMatch = new Match(
@@ -79,7 +79,6 @@
     // If a match is to be added to a full buffer, a new match is created between the match in the buffer, and the match set to be added
     for (var i = 0; i < allEntrants.length; i += pPerMatch) {
       let order = 0;
-      console.log("i", i)
 
       //create the first round match
       let firstRoundParticipants = []
@@ -121,7 +120,8 @@
         resolveMatch(i, i.participants.find(j => !j.data!.isDummy)!.data!)
     })
   }
-  GenerateMatches()
+  // GenerateMatches()
+  let bb = new Bracket(allEntrants, 1, 2)
   // console.log("All ", allMatches)
 
   const roundNumberToTitle = (rn: number) => {
@@ -147,11 +147,11 @@
 <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
   <VotingScreen bind:this={votingScreen} resolveMatch={resolveMatch}/>
   
-  <Bracket startVoting={votingScreen?.startVoting} participantsPerMatch={pPerMatch} entrants={allEntrants} matches={allMatches}/>
+  <BracketUI startVoting={votingScreen?.startVoting} participantsPerMatch={bb.participantsPerMatch} entrants={bb.allEntrants} matches={bb.allMatches}/>
 
   <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
     <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
-      {#each allMatches as match}
+      {#each bb.allMatches as match}
         <!-- {#if allMatches[rn].some(i => i.resolved == false)}
           <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
         {/if} -->

@@ -208,8 +208,9 @@ Once we have added our placeholders, the process is exactly the same as before.
 We can update our algorithm from before to implement this update:
 ```c++
 AssignSingleRoundMatches(Participant[] allParticipants, int numParticipants, int participantsPerMatch, int winnersPerMatch):
-  int numPlaceholders = participantsPerMatch - (numParticipants % participantsPerMatch)
-  allParticipants = allParticipants.addPlaceholderParticipants(numPlaceholders)
+  if numParticipants % participantsPerMatch != 0:
+    int numPlaceholders = participantsPerMatch - (numParticipants % participantsPerMatch)
+    allParticipants = allParticipants.addPlaceholderParticipants(numPlaceholders)
 
   numMatches = numParticipants / participantsPerMatch
   Match[numMatches] allMatches
@@ -329,16 +330,17 @@ Our previous constraint was to ensure we have the right quantity participants to
 
 We will begin with the `PPM % WPM == 0` case. Knowing that our final round will have `1 * PPM` participants (as there is only one match, the finals), we can work backwards. The round before last will need to produce `1 * PPM` winners, meaning we know `X * WPM = PPM`. Solving for `X` gives us `X = PPM / WPM`. Extending this logic tells us that each round will have a number of matches equal to `PPM / WPM` multiplied by the number of matches in the subsequent round. This is an exponential relationship where our base is `PPM / WPM`.
 
-This means to ensure that every single round has a valid number of participants, we need the number of participants to be equal to `PPM / WPM` raised to some power. This can be expressed more mathematically as:
+This means our final match will have PPM participants, and each previous round will increase the number of participants by a factor of PPM/WPM. So to ensure that the number of participants is valid, it must be the case that starting with the total number of participants, and multiplying by WPM/PPM repeatedly should eventually yield the number of participants in the final: PPM. This can be stated more formally as: 
 
-$\log_{\mathrm{PPM/WPM}}{(Num Participants)} \: \% \: 1 \: == 0$
+$\log_{\mathrm{PPM/WPM}}{(\frac{Num Participants}{PPM})} \: \% \: 1 \: == 0$
 
 *Note that specifying `some quantity % 1 == 0` is the same as specifying that it is a whole number.*
 
 For a given number of participants `P`, and a PPM to WPM ratio of `PPM / WPM = B` the number of placeholders to be added can be given as:
 
-$B^{\left(\log_{B}\left(P\right)+1-\operatorname{mod}\left(\log_{B}\left(P\right),1\right)\right)} - P
-$
+$B^{\left(\log_{B}\left(\P\right)+1-\operatorname{mod}\left(\log_{B}\left(P\right),1\right)\right)}-P$
+
+TODO: express that the issue is that there is no value of numparticipants that can satisfy the eqation: $\log_{\mathrm{PPM/WPM}}{(\frac{Num Participants}{PPM})} \: \% \: 1 \: == 0$
 
 Unfortunately, as with before when `PPM % WPM != 0` there are additional considerations. The result is that it is impossible to only have 1st round BYEs. With the previous method, placeholder contestants (BYEs) would only appear in the first round. However, in this case, it is unavoidable to have BYEs in subsequent rounds. To illustrate this we will take a 3 PPM, 2 WPM bracket with 15 total participants.
 
@@ -536,7 +538,7 @@ graph LR
 This contains a much more important issue. In the loser's bracket 1st round: `5` has a BYE, whereas `6,7` do not. Intuitively this may seem off in some way, unfortunately there is no solution which solves this more than it creates other issues. By the logic of how we've been handling non-ideal numbers of participants thus far, this inequality of matches is ostensibly acceptable, but suboptimal.
 
 ### Case 3: N to M
-As is the trend, the existence of a loser's bracket can complicate what we've already covered. The key complexity of N to 1 is that the number of participants introduced into the loser's bracket by each round of the winner's bracket is equal to `PPM-WPM`. This means that for things to behave nicely, we not only need `PPM % WPM == 0`, but also `(PPM-WPM) % WPM == 0`.
+As is the trend, the existence of a loser's bracket can complicate what we've already covered. The key complexity of N to 1 is that the number of participants introduced into the loser's bracket by each round of the winner's bracket is equal to `PPM-WPM`. This means that for things to behave nicely, we not only need `PPM % WPM == 0`, but also `PPM % (PPM-WPM) == 0`. !!!!!!!!!!!!!!!!!!!!!!!!!!<<<<<<<<<< This is wrong
 
 To understand what this means, and why its the case, we'll look at a 3 PPM, 1 WPM bracket. If we did this with any appreciable number of participants, the diagram would be too large to parse, so we'll make it a table. Keep in mind that for every match, 2 participants are losers, and only 1 is a winner.
 

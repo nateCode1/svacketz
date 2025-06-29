@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Match, Entrant, type MatchParticipant } from '$lib/typedef'
+  import { Match, Entrant, type MatchParticipant } from '$lib/bracket'
 
   export let match: Match;
   export let startVoting: (voteOn: Match) => void | null;
