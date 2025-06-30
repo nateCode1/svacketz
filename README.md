@@ -560,6 +560,7 @@ This requirement needs reevaluating for the 3 to 1 case. The intuitive expansion
 - Intro explaining what seeding is, and how everything is about tradeoffs in how important it should be
 - Clarify what increasing and decreasing order means
 - Add a glossary
+- A 3 to 2 bracket with 9 participants never terminates (eventually you get an endless loop of two matches producing 4 winners which produces 4 matches, etc etc)
 
 # Appendicies
 ## Appendix 1: Why a 3 to 2 Bracket Always Requires Non 1st Round BYEs

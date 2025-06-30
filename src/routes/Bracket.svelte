@@ -1,12 +1,18 @@
 <script lang="ts">
   import { Match, Entrant, type MatchParticipant } from '$lib/bracket'
-  import { type Connector } from '$lib/typedef';
+  import { type Connector, type Position } from '$lib/typedef';
 
   export let participantsPerMatch: number;
   export let matches: Match[];
   export let entrants: Entrant[];
   export let startVoting: (voteOn: Match) => void | null;
   
+  let matchIdsToPos: matchIdToPos = {}
+
+  matches.forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
+
+  type matchIdToPos = {[key: number]: Position;}
+
   let connectors: Connector[] = [];
   let maxMatchesPerRound = entrants.length / participantsPerMatch;
   let rounds = Math.log2(entrants.length)
@@ -25,26 +31,25 @@
 
   //Function to set the position of feeder matches relative to the current match
   const setChildPositions = (match: Match): void => {
+    let pos = matchIdsToPos[match.id];
     match.participants.forEach((child: MatchParticipant, i: number) => {
-      if (child.from) {
-        child.from.visualPos.x = match.visualPos.x - matchWidth - gapX;
+      if (child.from && child.from.results.find(i => i.to?.id == match.id)!.draw) {
+        let childPos = matchIdsToPos[child.from.id]
+        childPos.x = pos.x - matchWidth - gapX;
 
-        //using round we know how tall the total children of the match are
-        let childrenTall = Math.pow(participantsPerMatch, child.from.round);
-        // console.log(childrenTall)
-        // console.log((childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5))
+        let childrenTall = match.childrenTall;
         const yOffFromIndex = (i: number) => (childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5)
-        child.from.visualPos.y = match.visualPos.y + yOffFromIndex(i);
+        childPos.y = pos.y + yOffFromIndex(i);
         setChildPositions(child.from);
 
         let matchConnector: Connector = {
           thickness: 3, // Todo: make even or odd based on gap
           tickSize: 10,
-          x: match.visualPos.x - gapX/2,
-          top: match.visualPos.y + yOffFromIndex(0) + matchHeight/2,
-          bottom: match.visualPos.y + yOffFromIndex(match.participants.length - 1) + matchHeight/2,
-          leftTicks: Array(match.participants.length).fill(0).map((_, i) => match.visualPos.y + yOffFromIndex(i) + matchHeight/2),
-          rightTicks: [match.visualPos.y + matchHeight/2]
+          x: pos.x - gapX/2,
+          top: pos.y + yOffFromIndex(0) + matchHeight/2,
+          bottom: pos.y + yOffFromIndex(match.participants.length - 1) + matchHeight/2,
+          leftTicks: Array(match.participants.length).fill(0).map((_, i) => pos.y + yOffFromIndex(i) + matchHeight/2),
+          rightTicks: [pos.y + matchHeight/2]
         };
         
         connectors.push(matchConnector);
@@ -56,7 +61,7 @@
   let finalMatch = matches[0];
   matches.forEach(i => finalMatch = i.round > finalMatch.round ? i : finalMatch);
 
-  finalMatch.visualPos = {x: 0, y: 0}
+  matchIdsToPos[finalMatch.id] = {x: 0, y: 0}
 
   // Runs on load with a ref to the 2nd from top div (pos relative)
   function onLoad(displayArea: HTMLElement) {
@@ -68,13 +73,13 @@
     let minY = 0;
 
     matches.forEach(i => {
-      minX = i.visualPos.x < minX ? i.visualPos.x : minX;
-      minY = i.visualPos.y < minY ? i.visualPos.y : minY;
+      minX = matchIdsToPos[i.id].x < minX ? matchIdsToPos[i.id].x : minX;
+      minY = matchIdsToPos[i.id].y < minY ? matchIdsToPos[i.id].y : minY;
     })
 
     matches.forEach(i => {
-      i.visualPos.x -= minX;
-      i.visualPos.y -= minY;
+      matchIdsToPos[i.id].x -= minX;
+      matchIdsToPos[i.id].y -= minY;
     })
 
     connectors.forEach(i => {
@@ -87,6 +92,7 @@
     connectors = [...connectors] // trigger a rerender now that connectors is populated
 
     console.log("All connectors", connectors)
+    console.log("All poss", Object.values(matchIdsToPos))
   }
 
   const handleMousedown = (ev: any) => {
@@ -155,12 +161,12 @@
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div role="mark" bind:this={bracketArea} on:mousedown={handleMousedown} on:mousemove={handleMousemove} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
-  <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * gapY}px;`}>
+  <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * Math.abs(gapY)}px;`}>
     {#each matches as match, i}
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
-      <div on:click={() => startVoting(match)} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${match.visualPos.x}px; top: ${match.visualPos.y}px;`}>
+      <div on:click={() => startVoting(match)} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${matchIdsToPos[match.id].x}px; top: ${matchIdsToPos[match.id].y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
           <div class="blob"></div>
           <div class="fake-blob"></div>

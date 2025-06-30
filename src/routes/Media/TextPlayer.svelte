@@ -25,7 +25,7 @@
     export function preview(text: string) {
         source = text;
         ready = true;
-        endPreviewTimeout = setTimeout(endCurrentPreview, maxPreviewLength * 10000) // TODO <<<< CHANGE 10000 to 1000
+        endPreviewTimeout = setTimeout(endCurrentPreview, maxPreviewLength * 1000)
     }
 
 	export function init() {
