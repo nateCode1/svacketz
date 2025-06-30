@@ -1,37 +1,41 @@
 <script lang="ts">
-  import { Match, Entrant, type MatchParticipant } from '$lib/bracket'
+  import { Match, Entrant, Bracket, type MatchParticipant } from '$lib/bracket'
   import { type Connector, type Position } from '$lib/typedef';
 
-  export let participantsPerMatch: number;
-  export let matches: Match[];
-  export let entrants: Entrant[];
+  // export let participantsPerMatch: number;
+  // export let matches: Match[];
+  // export let entrants: Entrant[];
+  export let bracket: Bracket;
   export let startVoting: (voteOn: Match) => void | null;
   
-  let matchIdsToPos: matchIdToPos = {}
+  let matchIdsToPos: matchIdToPos = {};
 
-  matches.forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
+  [...bracket.allMatchesUpper, ...(bracket.allMatchesLower ?? [])].forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
 
   type matchIdToPos = {[key: number]: Position;}
 
-  let connectors: Connector[] = [];
-  let maxMatchesPerRound = entrants.length / participantsPerMatch;
-  let rounds = Math.log2(entrants.length)
+  let connectorsUpper: Connector[] = [];
+  let connectorsLower: Connector[] = [];
+  let maxMatchesPerRound = bracket.allEntrants.length / bracket.participantsPerMatch; // Todo: useless variable
+  let rounds = Math.log2(bracket.allEntrants.length)
 
   let matchWidth = 140;
-  let matchHeight = 20 + 20 * participantsPerMatch;
+  let matchHeight = 20 + 20 * bracket.participantsPerMatch;
   let gapX = 20;
   let gapY = -30;
 
   let mousedown = false;
 
   let bracketArea: HTMLElement;
-  let allMatchElements = new Array(matches.length); 
+  let allMatchElements = new Array(bracket.allMatchesUpper.length + (bracket.allMatchesLower?.length ?? 0)); 
 
   let debounceHideGlow: NodeJS.Timeout;
 
   //Function to set the position of feeder matches relative to the current match
-  const setChildPositions = (match: Match): void => {
+  const setChildPositions = (match: Match): Connector[] => {
+    let allConnectors: Connector[] = [];
     let pos = matchIdsToPos[match.id];
+
     match.participants.forEach((child: MatchParticipant, i: number) => {
       if (child.from && child.from.results.find(i => i.to?.id == match.id)!.draw) {
         let childPos = matchIdsToPos[child.from.id]
@@ -40,7 +44,7 @@
         let childrenTall = match.childrenTall;
         const yOffFromIndex = (i: number) => (childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5)
         childPos.y = pos.y + yOffFromIndex(i);
-        setChildPositions(child.from);
+        allConnectors.push(...setChildPositions(child.from));
 
         let matchConnector: Connector = {
           thickness: 3, // Todo: make even or odd based on gap
@@ -52,47 +56,79 @@
           rightTicks: [pos.y + matchHeight/2]
         };
         
-        connectors.push(matchConnector);
+        allConnectors.push(matchConnector);
       }
     })
+    
+    return allConnectors;
   }
 
   //Set the finals to be the root, then calculate backwards from there
-  let finalMatch = matches[0];
-  matches.forEach(i => finalMatch = i.round > finalMatch.round ? i : finalMatch);
+  let upperFinals = bracket.allMatchesUpper[0];
+  bracket.allMatchesUpper.forEach(i => upperFinals = i.round > upperFinals.round ? i : upperFinals);
+  matchIdsToPos[upperFinals.id] = {x: 0, y: 0}
 
-  matchIdsToPos[finalMatch.id] = {x: 0, y: 0}
+  let lowerFinals: Match | undefined;
+  if (bracket.allMatchesLower) {
+    lowerFinals = bracket.allMatchesLower[0];
+    bracket.allMatchesLower.forEach(i => lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals);
+    matchIdsToPos[lowerFinals.id] = {x: 0, y: 0}
+  }
 
   // Runs on load with a ref to the 2nd from top div (pos relative)
   function onLoad(displayArea: HTMLElement) {
+    const getMatchesMinMaxPos = (matches: Match[]) => {
+      let min: Position = {x: 0, y: 0}
+      let max: Position = {x: 0, y: 0}
+
+      matches.forEach(i => {
+        min.x = Math.min(matchIdsToPos[i.id].x, min.x);
+        min.y = Math.min(matchIdsToPos[i.id].y, min.y);
+        max.x = Math.max(matchIdsToPos[i.id].x, max.x);
+        max.y = Math.max(matchIdsToPos[i.id].y, max.y);
+      })
+
+      return {min, max}
+    }
+
+    const offsetConnectors = (connectors: Connector[], offset: Position) => {
+      connectors.forEach(i => {
+        i.x -= offset.x;
+        i.top -= offset.y;
+        i.bottom -= offset.y;
+        i.leftTicks = i.leftTicks?.map(i => i - offset.y)
+        i.rightTicks = i.rightTicks?.map(i => i - offset.y)
+      })
+    }
+
+    const offsetMatches = (matches: Match[], offset: Position) => {
+      matches.forEach(i => {
+        matchIdsToPos[i.id].x -= offset.x;
+        matchIdsToPos[i.id].y -= offset.y;
+      })
+    }
+
     document.addEventListener("mouseup", handleMouseup);
 
-    setChildPositions(finalMatch);
+    connectorsUpper = setChildPositions(upperFinals);
+    let {min: minUpper, max: maxUpper} = getMatchesMinMaxPos(bracket.allMatchesUpper);
+    offsetMatches(bracket.allMatchesUpper, minUpper)
+    offsetConnectors(connectorsUpper, minUpper);
+    connectorsUpper = [...connectorsUpper] // trigger a rerender now that connectors is populated
 
-    let minX = 0;
-    let minY = 0;
+    if (bracket.allMatchesLower) {
+      connectorsLower = setChildPositions(lowerFinals!);
+      let {min: minLower, max: maxLower} = getMatchesMinMaxPos(bracket.allMatchesLower);
+      let {min: minUpperNew, max: maxUpperNew} = getMatchesMinMaxPos(bracket.allMatchesUpper);
+      let lowerBracketOffset = {x: minLower.x, y: minLower.y - maxUpperNew.y - matchHeight - 40};
+      offsetMatches(bracket.allMatchesLower, lowerBracketOffset);
+      offsetConnectors(connectorsLower, lowerBracketOffset);
+      connectorsLower = [...connectorsLower]
+    }
 
-    matches.forEach(i => {
-      minX = matchIdsToPos[i.id].x < minX ? matchIdsToPos[i.id].x : minX;
-      minY = matchIdsToPos[i.id].y < minY ? matchIdsToPos[i.id].y : minY;
-    })
-
-    matches.forEach(i => {
-      matchIdsToPos[i.id].x -= minX;
-      matchIdsToPos[i.id].y -= minY;
-    })
-
-    connectors.forEach(i => {
-      i.x -= minX;
-      i.top -= minY;
-      i.bottom -= minY;
-      i.leftTicks = i.leftTicks?.map(i => i - minY)
-      i.rightTicks = i.rightTicks?.map(i => i - minY)
-    })
-    connectors = [...connectors] // trigger a rerender now that connectors is populated
-
-    console.log("All connectors", connectors)
-    console.log("All poss", Object.values(matchIdsToPos))
+    console.log("Upper bracket connectors", connectorsUpper)
+    console.log("Lower bracket connectors", connectorsLower)
+    // console.log("All pos", Object.values(matchIdsToPos))
   }
 
   const handleMousedown = (ev: any) => {
@@ -162,7 +198,7 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div role="mark" bind:this={bracketArea} on:mousedown={handleMousedown} on:mousemove={handleMousemove} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
   <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * Math.abs(gapY)}px;`}>
-    {#each matches as match, i}
+    {#each [...bracket.allMatchesUpper, ...(bracket.allMatchesLower ?? [])] as match, i}
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
@@ -171,19 +207,25 @@
           <div class="blob"></div>
           <div class="fake-blob"></div>
           <div class="card-inner">
-            <div>
+            <div style="display: flex; align-items: center; padding: 3px; border-right: 1px solid #aaa; font-size: 1.2em;">
               <p>{match.id + 1}</p>
             </div>
-            <div style="text-overflow: ellipsis; text-wrap: nowrap;">
+            <div style="text-overflow: ellipsis; text-wrap: nowrap; display: flex; flex-direction: column; align-items: stretch; width: 100%;">
               {#each match.participants as participant, j}
-                <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? 'W.O. ' + (1 + (participant.from?.id ?? -2))}</p>
+                <div class="participant" style="display: flex; padding: 2px; padding-left: 3px;">
+                  <p style={`order: ${j * 5}; font-weight: bold; color: #aaa;`}>{participant.theoreticalSeed+1}</p>
+                  <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? ""}</p>
+                </div>
+                {#if j != match.participants.length - 1}
+                  <div style="height: 1px; width: 100%; background-color: #aaa;"></div>
+                {/if}
               {/each}
             </div>
           </div>
         </div>
       </div>
     {/each}
-    {#each connectors as connector, i}
+    {#each [...connectorsUpper, ...connectorsLower] as connector, i}
         <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x}px; top: ${connector.top}px; width: ${connector.thickness}px; border-radius: 100px; height: ${connector.bottom - connector.top + connector.thickness}px;`}>
         </div>
         {#if connector.leftTicks}
@@ -230,7 +272,7 @@
 
   .card-inner {
     border-radius: 7px;
-    padding: 5px;
+    padding: 0;
     flex-shrink: 1;
     overflow: hidden;
     background-color: rgba(0,0,0,0.6);
@@ -257,7 +299,7 @@
   }
 
   .blob {
-    filter: blur(10px) opacity(50%);
+    filter: blur(10px) opacity(80%);
     position: absolute;
     z-index: -1;
     top: 0;
@@ -267,7 +309,7 @@
     aspect-ratio: 1/1;
     border-radius: 50%;
     background-color: #bbf;
-    background-image: linear-gradient( 89.7deg, rgba(223,0,0,1) 2.7%, rgba(214,91,0,1) 15.1%, rgba(233,245,0,1) 29.5%, rgba(23,255,17,1) 45.8%, rgba(29,255,255,1) 61.5%, rgba(5,17,255,1) 76.4%, rgba(202,0,253,1) 92.4% );
+    /* background-image: linear-gradient( 89.7deg, rgba(223,0,0,1) 2.7%, rgba(214,91,0,1) 15.1%, rgba(233,245,0,1) 29.5%, rgba(23,255,17,1) 45.8%, rgba(29,255,255,1) 61.5%, rgba(5,17,255,1) 76.4%, rgba(202,0,253,1) 92.4% ); */
     transition: all 100ms ease-in-out;
   }
 </style>

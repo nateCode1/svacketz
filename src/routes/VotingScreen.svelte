@@ -5,7 +5,7 @@
   
   export let match: Match | null = null;
   export let overlayVisible = false;
-  export let resolveMatch: (match: Match, winner: Entrant) => void;
+  export let resolveMatch: (match: Match, placements: Entrant[]) => void;
   export let repeatPreviews = false;
 
   export let close = () => {
@@ -25,6 +25,11 @@
 
   let focusedParticipantIndex: number = 0;
   let mediaManager: MediaPlayer;
+
+  let placements: entrantSeedToPlacement = {};
+  match?.participants.forEach(i => placements[i.data!.seed] = 999);
+
+  type entrantSeedToPlacement = {[key: number]: number;}
 
   onMount(() => mediaManager.init())
 
@@ -51,11 +56,16 @@
     return result.to ? `Advances to Match ${result.to.id}` : "TBD";
   };
 
-  const selectWinner = (winner?: Entrant) => {
-    // This if statement condition is theoretically always true
-    if (winner && match)
-      resolveMatch(match, winner);
+  const setPlacement = (winner: Entrant, placement: number) => {
+    let alreadyHasPlacement = match!.participants.filter(i => placements[i.data?.seed ?? -1] == placement);
+    alreadyHasPlacement.forEach(i => setPlacement(i.data!, placements[i.data!.seed]+1))
+    
+    placements[winner.seed] = placement;
+  }
 
+  const endVoting = () => {
+    let placementArray: Entrant[] = match?.participants.filter(i => i.data).map(i => i.data!).sort((a,b) => placements[a!.seed] - placements[b!.seed]);
+    resolveMatch(match!, placementArray);
     close();
   }
 </script>
@@ -74,13 +84,16 @@
       <h3>Participants</h3>
       <div class="all-participant-containter">
         {#each match.participants as participant, i}
-          <div class={`participant-container ${i == focusedParticipantIndex ? 'participant-container-focused' : ''}`}>
-            <h2>{participantDisplay(participant)}</h2>
-            <button on:click={() => {selectWinner(participant.data)}}>Mark Winner</button>
-          </div>
+          {#if participant.data}
+            <div class={`participant-container ${i == focusedParticipantIndex ? 'participant-container-focused' : ''}`}>
+              <h2>{participantDisplay(participant)}</h2>
+              {#each Array(match.participants.length).fill(0).map((_,j) => j+1) as i}
+                <button class={`${(placements[participant.data.seed] == i) ? "selected-placement" : ""}`} on:click={() => {if (participant.data) setPlacement(participant.data, i)}}>{i}</button>
+              {/each}
+            </div>
+          {/if}
         {/each}
       </div>
-
     {/if}
     
     <MediaPlayer
@@ -88,6 +101,8 @@
       previewDoneCallback={previewNext} 
       bind:this={mediaManager} 
     />
+
+    <button on:click={() => endVoting()}>End voting</button>
 
     {#if !match}
       <p>No match data available.</p>
@@ -148,6 +163,10 @@
     border: 2px solid white;
     color: white;
     transform: scale(1.15);
+  }
+
+  .selected-placement {
+    background-color: rgb(200,200,255);
   }
 
   h2 {

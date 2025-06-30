@@ -1,3 +1,4 @@
+import { assets } from "$app/paths";
 import type { MediaInfo, MediaType, Position } from "./typedef";
 
 type MatchGroupings = number[][];
@@ -12,11 +13,12 @@ export type MatchResult = {
 export type MatchParticipant = {
 	from?: Match;
 	data?: Entrant;
+    theoreticalSeed: number;
 }
 
 export class Entrant {
 	name: string;
-	seed: number;
+	seed: number; // Seed is unique identifier
 	isDummy: boolean;
 	media?: MediaInfo;
 
@@ -92,6 +94,7 @@ type Round = {
 export class Bracket {
     allMatchesUpper: Match[];
     allMatchesLower?: Match[]; // Only present for double elimination
+    grandFinals: Match;
     winnersPerMatch: number;
     participantsPerMatch: number;
     allEntrants: Entrant[];
@@ -99,15 +102,12 @@ export class Bracket {
     constructor(allEntrants: Entrant[], winnersPerMatch: number, participantsPerMatch: number) {
         this.allMatchesUpper = [];
         allEntrants.sort((a,b) => a.seed - b.seed);
+        allEntrants.forEach((i,j) => i.seed = j)
 
         // Pad the length of allEntrants with BYEs
         let ratio = participantsPerMatch / winnersPerMatch;
         let log = Math.log(allEntrants.length) / Math.log(ratio);
         let requiredBYEs = Math.round(Math.pow(ratio, log + 1 - (log % 1)) - allEntrants.length);
-
-        let placeholderEntrants = Array(requiredBYEs).fill(0).map(i => Entrant.getDummy())
-
-        allEntrants = [...allEntrants, ...placeholderEntrants]
 
         this.allEntrants = allEntrants;
         this.winnersPerMatch = winnersPerMatch;
@@ -116,11 +116,11 @@ export class Bracket {
         // --- Create bracket template ---
         // - Upper Bracket -
         // Create 1st round
-        let allEntrantSeeds = allEntrants.map((i,j) => j)
+        let allEntrantSeeds = allEntrants.map(i => i.seed)
 
         console.log("allEntrantSeeds", allEntrantSeeds)
 
-        let allRoundsUpper = [this.getSingleRound(allEntrantSeeds)]
+        let allRoundsUpper = [this.getSingleRound(allEntrantSeeds, {setNumPlaceholders: requiredBYEs})]
 
         console.log("allRounds[allRounds.length - 1].matches", allRoundsUpper[allRoundsUpper.length - 1].matchGroups)
 
@@ -159,7 +159,12 @@ export class Bracket {
             }
         } while (allRoundsLower[allRoundsLower.length - 1].winnerSeeds.length >= participantsPerMatch && allRoundsUpper[currLowerRound+1]);
 
-        console.log("allRoundsLower match groups", allRoundsLower.map(i => i.matchGroups))
+        console.log("allRoundsLower match groups", allRoundsLower.map(i => i.matchGroups));
+
+        // Create grand finals
+        let grandFinalParticipantSeeds = [...allRoundsUpper[allRoundsUpper.length - 1].winnerSeeds, ...allRoundsLower[allRoundsLower.length - 1].winnerSeeds];
+        let grandFinalRround = this.getSingleRound(grandFinalParticipantSeeds, {participantsPerMatch: grandFinalParticipantSeeds.length, winnersPerMatch: 1});
+        grandFinalRround.fedFrom.push(allRoundsUpper[allRoundsUpper.length - 1], allRoundsLower[allRoundsLower.length - 1]);
 
         // --- Convert bracket template into actual matches ---
         // First round
@@ -170,7 +175,8 @@ export class Bracket {
                 currMatchId++, 1,
                 i.map(j => {return {
                     from: undefined, // 1st round means from nowhere
-                    data: this.allEntrants[j]
+                    data: this.allEntrants[j],
+                    theoreticalSeed: j,
                 }}
             ))
             this.allMatchesUpper.push(currMatch);
@@ -203,7 +209,7 @@ export class Bracket {
                     currMatchId++, roundNum+1,
                     i.map(j => {
                         let {fromMatch, indexWithinPreviousRoundMatch} = findFromRound(j);
-                        return {from: fromMatch, data: undefined}
+                        return {from: fromMatch, data: undefined, theoreticalSeed: j}
                     })
                 )
 
@@ -217,10 +223,6 @@ export class Bracket {
 
                     // Todo: this is a temporary solution for drawing
                     fromMatch.results[0].draw = true;
-
-                    if (currMatch.id == 13) {
-                        console.log("fm 13", fromMatch)
-                    }
                 })
 
                 matchList.push(currMatch);
@@ -231,17 +233,19 @@ export class Bracket {
         }
 
         let filterRedundant = (match: Match) => {
-            if (match.participants.length <= this.winnersPerMatch) console.log("BOOSOO", match.results)
             if (match.participants.length <= this.winnersPerMatch && match.results.slice(0, match.participants.length).every(i => i.to)) {
                 // Point all participants to subsequent match
                 match.participants.forEach((i, j) => {
-                    console.log("mID", match.id)
-                    console.log("mp", match.participants)
-                    console.log("mr", match.results)
-                    console.log("i", i)
                     let pointsToCurr = i.from?.results.find(k => k.to?.id == match.id)!;
-                    pointsToCurr.to = match.results[j].to;
-                    match.results[j].to!.participants.find(k => k.from!.id == match.id)!.from! = i.from!;
+                    let currPointsTo = match.results[j].to!.participants.find(k => k.from!.id == match.id)!;
+                    if (pointsToCurr) { // Not 1st round
+                        pointsToCurr.to = match.results[j].to;
+                        currPointsTo.from! = i.from!;
+                    }
+                    else { // 1st Round                        
+                        currPointsTo.data = i.data;
+                        currPointsTo.from = undefined;
+                    }
                 })
                 return false
             }
@@ -255,34 +259,51 @@ export class Bracket {
         allRoundsLower.forEach((r, i) => this.allMatchesLower!.push(...generateMatchesFromRound(r,i)));
         this.allMatchesLower = this.allMatchesLower.filter(filterRedundant)
 
+        this.grandFinals = generateMatchesFromRound(grandFinalRround, 0)[0];
 
-        console.log("allMatchesLower children tall", this.allMatchesLower?.map(i => i.childrenTall))
-        console.log("allMatchesLower round", this.allMatchesLower?.map(i => i.round))
+        console.log("Grand finals: ", this.grandFinals)
     }
 
-    private getSingleRound(participantSeeds: number[], allowPadding: boolean = true): Round {
-        if (!allowPadding && (participantSeeds.length % this.participantsPerMatch != 0)) throw new Error('Invalid number of participants passed for seeding when allowPadding=false');
+    private getSingleRound(
+        participantSeeds: number[],
+        settings?: {
+            allowPadding?: boolean,
+            setNumPlaceholders?: number,
+            participantsPerMatch?: number,
+            winnersPerMatch?: number
+        }
+    ): Round {
+        // Default parameters
+        let allowPadding = settings?.allowPadding ?? true;
+        let setNumPlaceholders = settings?.setNumPlaceholders;
+        let participantsPerMatch = settings?.participantsPerMatch ?? this.participantsPerMatch;
+        let winnersPerMatch = settings?.winnersPerMatch ?? this.winnersPerMatch;
 
+        // Assertions
+        if (!allowPadding && (participantSeeds.length % participantsPerMatch != 0)) throw new Error('Invalid number of participants passed to getSingleRound when allowPadding=false');
+        
         participantSeeds.sort((a, b) => a - b);
 
         let numRealParticipants = participantSeeds.length;
 
         // Add placeholders as needed
-        if (numRealParticipants % this.participantsPerMatch != 0) {
-            let numPlaceholders = this.participantsPerMatch - (numRealParticipants % this.participantsPerMatch);
+        if (numRealParticipants % participantsPerMatch != 0 || setNumPlaceholders) {
+            let numPlaceholders = 0;
+            if (setNumPlaceholders) numPlaceholders = setNumPlaceholders;
+            else numPlaceholders = participantsPerMatch - (numRealParticipants % participantsPerMatch);
             let placeholders = Array(numPlaceholders).fill(-1);
 
             participantSeeds = [...participantSeeds, ...placeholders];
         }
 
-        let numMatches = participantSeeds.length / this.participantsPerMatch
+        let numMatches = participantSeeds.length / participantsPerMatch
 
         let matchAssignments: MatchGroupings = Array(numMatches).fill(0).map(i => [])
 
         for (let i = 0; i < numMatches; i++) {
-            for (let j = 0; j < this.participantsPerMatch; j++) {
+            for (let j = 0; j < participantsPerMatch; j++) {
                 if (participantSeeds[i + j * numMatches] == -1) continue
-                if (j < this.winnersPerMatch)
+                if (j < winnersPerMatch)
                     matchAssignments[i].push(participantSeeds[i + j * numMatches])
                 else
                     matchAssignments[numMatches - 1 - i].push(participantSeeds[i + j * numMatches])
@@ -295,7 +316,7 @@ export class Bracket {
         let losers: number[] = [];
         matchAssignments.forEach((match) => {
             match.forEach((i,j) => {                
-                if (j < this.winnersPerMatch) winners.push(i);
+                if (j < winnersPerMatch) winners.push(i);
                 else losers.push(i);
             })
         })

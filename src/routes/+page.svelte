@@ -18,9 +18,9 @@
   // Media test data
   let rawParticipantsMediaYoutube = [{name: "Turnip Turns up", src: "tx2LXzM-Q2A"}, {name: "10 hours", src: "f1A7SdVTlok"}, {name: "Ohhhh!", src: "e6FPWcyREgo"}]
   let allEntrants: Entrant[] = rawParticipantsMediaYoutube.map((i: any, n) => new Entrant(i.name, n, false, MediaType.YOUTUBE, i.src))
-  // add image
   allEntrants.push(new Entrant("Splendid Cats", -1, false, MediaType.IMAGE, "https://static.wikia.nocookie.net/8772c172-9f2a-4421-b6fa-ca4f7373fa1e/scale-to-width/755"))
   allEntrants.push(new Entrant("Wide boy", -2, false, MediaType.IMAGE, "https://www.shutterstock.com/image-photo/very-wide-night-panorama-london-260nw-232927153.jpg"))
+  allEntrants.push(new Entrant("JS Jumpscare", -2, false, MediaType.IMAGE, "https://cdn.discordapp.com/attachments/564484316294545418/1389020465171009627/javascriptJumpscare.gif?ex=6863c25d&is=686270dd&hm=1bf6819697ce776cdc611f6014b0991e15affa80045b1c0541de24e9099f9cd2&"))
   allEntrants.push(new Entrant("Texty lad", -3, false, MediaType.TEXT, `
   # I'd like to say hello
   *and welcome you*
@@ -126,24 +126,27 @@
   //   })
   // }
   // GenerateMatches()
-  let bb = new Bracket(allEntrants, 1, 2)
+  let bracket = new Bracket(allEntrants, 1, 2)
 
-  const roundNumberToTitle = (rn: number) => {
+  const roundNumberToTitle = (roundNum: number) => {
     let roundTitles: any = {
       8: "Quarter-Finals",
       4: "Semi-Finals",
       2: "Grand Final",
     }
-    let rOf = Math.pow(2, allMatches.length - rn);
-    return roundTitles[rOf] ?? ("Round of " + rOf)
+    let roundOf = Math.pow(bracket.participantsPerMatch, allMatches.length - roundNum);
+    return roundTitles[roundOf] ?? ("Round of " + roundOf)
   }
 
-  function resolveMatch(match: Match, winner: Entrant) {
+  function resolveMatch(match: Match, matchPlacment: Entrant[]) {
     match.resolved = true;
-    match.results[0].data = winner;
-    match.results[0].to!.participants.find(i => i.from == match)!.data = winner;
+    match.results.forEach((i,j) => {
+      i.data = matchPlacment[j];
+      i.to!.participants.find(i => i.from == match)!.data = matchPlacment[j];
+    })
 
-    bb.allMatchesUpper[match.id] = match.copyOf;
+    bracket.allMatchesUpper = [...bracket.allMatchesUpper]
+    if (bracket.allMatchesLower) bracket.allMatchesLower = [...bracket.allMatchesLower] 
   }
 </script>
 
@@ -151,15 +154,12 @@
 <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
   <VotingScreen bind:this={votingScreen} resolveMatch={resolveMatch}/>
   <!-- <div> -->
-    <BracketUI startVoting={votingScreen?.startVoting} participantsPerMatch={bb.participantsPerMatch} entrants={bb.allEntrants} matches={bb.allMatchesUpper}/>
-    {#if bb.allMatchesLower}
-      <BracketUI startVoting={votingScreen?.startVoting} participantsPerMatch={bb.participantsPerMatch} entrants={bb.allEntrants} matches={bb.allMatchesLower}/>
-    {/if}
+    <BracketUI startVoting={votingScreen?.startVoting} bracket={bracket}/>
   <!-- </div> -->
 
   <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
     <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
-      {#each bb.allMatchesUpper as match}
+      {#each bracket.allMatchesUpper as match}
         <!-- {#if allMatches[rn].some(i => i.resolved == false)}
           <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
         {/if} -->
