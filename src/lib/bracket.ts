@@ -7,11 +7,13 @@ export type MatchResult = {
 	//possibly a property indicating placement
 	draw: boolean; //indicates if this connection to another match should be drawn
 	to?: Match;
+    toParticipant?: MatchParticipant;
 	data?: Entrant;
 }
 
 export type MatchParticipant = {
 	from?: Match;
+    fromResult?: MatchResult;
 	data?: Entrant;
     theoreticalSeed: number;
 }
@@ -68,7 +70,7 @@ export class Match {
 
     get childrenTall() {
         if (this.childrenTallCache) return this.childrenTallCache;
-        let drawnConnections = this.participants.filter(i => i.from?.results.find(j => j.to?.id == this.id)?.draw);
+        let drawnConnections = this.participants.filter(i => i.fromResult?.draw);
         let recursiveChildrenTall: number = drawnConnections.length > 0 ? drawnConnections.map(i => i.from!.childrenTall).reduce((a,b) => a+b) : 1;
         this.childrenTallCache = recursiveChildrenTall
         return recursiveChildrenTall;
@@ -85,6 +87,7 @@ export class Match {
 type Round = {
     participantSeeds: number[];
     fedFrom: Round[];
+    roundNum?: number;
     matchGroups: MatchGroupings;
     matchObjects: Match[];
     winnerSeeds: number[];
@@ -108,6 +111,7 @@ export class Bracket {
         let ratio = participantsPerMatch / winnersPerMatch;
         let log = Math.log(allEntrants.length) / Math.log(ratio);
         let requiredBYEs = Math.round(Math.pow(ratio, log + 1 - (log % 1)) - allEntrants.length);
+        if (Math.log(allEntrants.length / participantsPerMatch) / Math.log(ratio) % 1 == 0) requiredBYEs = 0;
 
         this.allEntrants = allEntrants;
         this.winnersPerMatch = winnersPerMatch;
@@ -119,6 +123,7 @@ export class Bracket {
         let allEntrantSeeds = allEntrants.map(i => i.seed)
 
         console.log("allEntrantSeeds", allEntrantSeeds)
+        console.log("requiredBYEs", requiredBYEs)
 
         let allRoundsUpper = [this.getSingleRound(allEntrantSeeds, {setNumPlaceholders: requiredBYEs})]
 
@@ -142,22 +147,31 @@ export class Bracket {
         
         // Create subsequent rounds
         let currLowerRound = 0;
-        let roundsUntilHalfRound = 2;
+        let roundsUntilHalfRound = 1;
         do {
             currLowerRound++;
             let currRound = this.getSingleRound([...allRoundsLower[allRoundsLower.length - 1].winnerSeeds, ...(allRoundsUpper[currLowerRound]?.loserSeeds ?? [])])
             currRound.fedFrom.push(allRoundsLower[allRoundsLower.length - 1], allRoundsUpper[currLowerRound]);
             allRoundsLower.push(currRound);
-
+            
             // Half rounds are a round consisting of only loser's bracket participants, and no new winner's bracket participants 
             roundsUntilHalfRound--;
-            if (roundsUntilHalfRound == 0) {
+            if (roundsUntilHalfRound == 0 && allRoundsLower[allRoundsLower.length - 1].winnerSeeds.length >= participantsPerMatch) {
                 roundsUntilHalfRound = 1;
                 currRound = this.getSingleRound(allRoundsLower[allRoundsLower.length - 1].winnerSeeds)
                 currRound.fedFrom.push(allRoundsLower[allRoundsLower.length - 1]);
                 allRoundsLower.push(currRound);
             }
-        } while (allRoundsLower[allRoundsLower.length - 1].winnerSeeds.length >= participantsPerMatch && allRoundsUpper[currLowerRound+1]);
+        } while (allRoundsUpper[currLowerRound+1] && allRoundsLower[allRoundsLower.length - 1].winnerSeeds.length + allRoundsUpper[currLowerRound+1].winnerSeeds.length >= participantsPerMatch);
+
+        // Set the round numbers for lower brackets
+        allRoundsLower.forEach((i,j) => i.roundNum = j)
+        // Set the round numbers for upper brackets based on lower brackets (accounts for half rounds)
+        allRoundsLower.forEach(i => {
+            i.fedFrom.forEach(j => {
+                if (!allRoundsLower.includes(j)) j.roundNum = i.roundNum;
+            })
+        })
 
         console.log("allRoundsLower match groups", allRoundsLower.map(i => i.matchGroups));
 
@@ -172,7 +186,7 @@ export class Bracket {
 
         allRoundsUpper[0].matchGroups.forEach(i => {
             let currMatch = new Match(
-                currMatchId++, 1,
+                currMatchId++, allRoundsUpper[0].roundNum ?? 0,
                 i.map(j => {return {
                     from: undefined, // 1st round means from nowhere
                     data: this.allEntrants[j],
@@ -184,8 +198,7 @@ export class Bracket {
         });
 
         // All Subsequent rounds
-        let generateMatchesFromRound = (round: Round, idx: number) => {
-            let roundNum = idx + 1;
+        let generateMatchesFromRound = (round: Round) => {
             let matchList: Match[] = [];
             
             round.matchGroups.forEach(i => {
@@ -206,20 +219,21 @@ export class Bracket {
 
                 // Create new match
                 let currMatch = new Match(
-                    currMatchId++, roundNum+1,
+                    currMatchId++, round.roundNum ?? 0,
                     i.map(j => {
                         let {fromMatch, indexWithinPreviousRoundMatch} = findFromRound(j);
-                        return {from: fromMatch, data: undefined, theoreticalSeed: j}
+                        return {from: fromMatch, fromResult: fromMatch.results[indexWithinPreviousRoundMatch], data: undefined, theoreticalSeed: j}
                     })
                 )
 
                 round.matchObjects.push(currMatch);
 
                 // Point all relevant matches from previous round to this round
-                i.forEach(j => {
+                i.forEach((j,k) => {
                     let {fromMatch, indexWithinPreviousRoundMatch} = findFromRound(j);
 
                     fromMatch.results[indexWithinPreviousRoundMatch].to = currMatch;
+                    fromMatch.results[indexWithinPreviousRoundMatch].toParticipant = currMatch.participants[k]
 
                     // Todo: this is a temporary solution for drawing
                     fromMatch.results[0].draw = true;
@@ -236,15 +250,17 @@ export class Bracket {
             if (match.participants.length <= this.winnersPerMatch && match.results.slice(0, match.participants.length).every(i => i.to)) {
                 // Point all participants to subsequent match
                 match.participants.forEach((i, j) => {
-                    let pointsToCurr = i.from?.results.find(k => k.to?.id == match.id)!;
-                    let currPointsTo = match.results[j].to!.participants.find(k => k.from!.id == match.id)!;
+                    let pointsToCurr = i.fromResult;
+                    let currPointsTo = match.results[j].toParticipant!;
                     if (pointsToCurr) { // Not 1st round
                         pointsToCurr.to = match.results[j].to;
                         currPointsTo.from! = i.from!;
+                        currPointsTo.fromResult! = i.fromResult!;
                     }
-                    else { // 1st Round                        
+                    else { // 1st Round
                         currPointsTo.data = i.data;
                         currPointsTo.from = undefined;
+                        currPointsTo.fromResult = undefined;
                     }
                 })
                 return false
@@ -252,16 +268,14 @@ export class Bracket {
             return true
         }
 
-        allRoundsUpper.slice(1).forEach((r, i) => this.allMatchesUpper.push(...generateMatchesFromRound(r,i)));
+        allRoundsUpper.slice(1).forEach(r => this.allMatchesUpper.push(...generateMatchesFromRound(r)));
         this.allMatchesUpper = this.allMatchesUpper.filter(filterRedundant)
 
         this.allMatchesLower = [];
-        allRoundsLower.forEach((r, i) => this.allMatchesLower!.push(...generateMatchesFromRound(r,i)));
+        allRoundsLower.forEach(r => this.allMatchesLower!.push(...generateMatchesFromRound(r)));
         this.allMatchesLower = this.allMatchesLower.filter(filterRedundant)
 
-        this.grandFinals = generateMatchesFromRound(grandFinalRround, 0)[0];
-
-        console.log("Grand finals: ", this.grandFinals)
+        this.grandFinals = generateMatchesFromRound(grandFinalRround)[0];
     }
 
     private getSingleRound(

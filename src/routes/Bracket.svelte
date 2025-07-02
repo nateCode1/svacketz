@@ -10,19 +10,21 @@
   
   let matchIdsToPos: matchIdToPos = {};
 
-  [...bracket.allMatchesUpper, ...(bracket.allMatchesLower ?? [])].forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
+  [...bracket.allMatchesUpper, ...(bracket.allMatchesLower ?? []), bracket.grandFinals].forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
 
   type matchIdToPos = {[key: number]: Position;}
 
   let connectorsUpper: Connector[] = [];
   let connectorsLower: Connector[] = [];
+  let grandFinalsConnector: Connector;
   let maxMatchesPerRound = bracket.allEntrants.length / bracket.participantsPerMatch; // Todo: useless variable
   let rounds = Math.log2(bracket.allEntrants.length)
 
   let matchWidth = 140;
-  let matchHeight = 20 + 20 * bracket.participantsPerMatch;
+  let matchHeight = 9 + 21 * bracket.participantsPerMatch;
   let gapX = 20;
-  let gapY = -30;
+  let gapY = 10;
+  let connectorThickness = 3; // Todo: make even or odd based on gap
 
   let mousedown = false;
 
@@ -37,23 +39,30 @@
     let pos = matchIdsToPos[match.id];
 
     match.participants.forEach((child: MatchParticipant, i: number) => {
-      if (child.from && child.from.results.find(i => i.to?.id == match.id)!.draw) {
+      pos.x = match.round * (matchWidth + gapX);
+      if (child.from && child.fromResult!.draw) {
         let childPos = matchIdsToPos[child.from.id]
-        childPos.x = pos.x - matchWidth - gapX;
+
+        childPos.x = child.from.round * (matchWidth + gapX);
+
+        let numDrawnIncomingConnections = match.participants.filter(i => i.fromResult?.draw).length;
 
         let childrenTall = match.childrenTall;
-        const yOffFromIndex = (i: number) => (childrenTall * (matchHeight + gapY)) * ((i / (match.participants.length - 1)) - 0.5)
+        const yOffFromIndex = (i: number) => (numDrawnIncomingConnections == 1) ? 7 : childrenTall/2 * (matchHeight + gapY) * (i / (match.participants.length - 1) - 0.5)
+        
         childPos.y = pos.y + yOffFromIndex(i);
         allConnectors.push(...setChildPositions(child.from));
 
+        let yOff = matchHeight/2 - connectorThickness / 2;
+
         let matchConnector: Connector = {
-          thickness: 3, // Todo: make even or odd based on gap
-          tickSize: 10,
-          x: pos.x - gapX/2,
-          top: pos.y + yOffFromIndex(0) + matchHeight/2,
-          bottom: pos.y + yOffFromIndex(match.participants.length - 1) + matchHeight/2,
-          leftTicks: Array(match.participants.length).fill(0).map((_, i) => pos.y + yOffFromIndex(i) + matchHeight/2),
-          rightTicks: [pos.y + matchHeight/2]
+          thickness: connectorThickness, 
+          tickSize: (pos.x - (childPos.x + matchWidth))/2,
+          x: (pos.x + (childPos.x + matchWidth))/2,
+          top: ((numDrawnIncomingConnections == 1) ? pos.y : pos.y + yOffFromIndex(0)) + yOff,
+          bottom: pos.y + yOffFromIndex(match.participants.length - 1) + yOff,
+          leftTicks: Array(numDrawnIncomingConnections).fill(0).map((_, i) => pos.y + yOffFromIndex(i) + yOff),
+          rightTicks: [pos.y + yOff]
         };
         
         allConnectors.push(matchConnector);
@@ -124,10 +133,27 @@
       offsetMatches(bracket.allMatchesLower, lowerBracketOffset);
       offsetConnectors(connectorsLower, lowerBracketOffset);
       connectorsLower = [...connectorsLower]
+
+      let grandFinalPos = matchIdsToPos[bracket.grandFinals.id];
+      grandFinalPos.y = (matchIdsToPos[upperFinals.id].y + matchIdsToPos[lowerFinals!.id].y) / 2;
+      grandFinalPos.x = Math.max(matchIdsToPos[upperFinals.id].x, matchIdsToPos[lowerFinals!.id].x) + matchWidth + gapX;
+
+      grandFinalsConnector = {
+        thickness: connectorThickness, 
+        tickSize: gapX/2,
+        x: grandFinalPos.x - gapX/2,
+        top: matchIdsToPos[upperFinals.id].y + matchHeight/2,
+        bottom: matchIdsToPos[lowerFinals!.id].y + matchHeight/2,
+        leftTicks: [
+          matchIdsToPos[upperFinals.id].y + matchHeight/2,
+          matchIdsToPos[lowerFinals!.id].y + matchHeight/2
+        ],
+        rightTicks: [grandFinalPos.y + matchHeight/2]
+      }
     }
 
-    console.log("Upper bracket connectors", connectorsUpper)
-    console.log("Lower bracket connectors", connectorsLower)
+    // console.log("Upper bracket connectors", connectorsUpper)
+    // console.log("Lower bracket connectors", connectorsLower)
     // console.log("All pos", Object.values(matchIdsToPos))
   }
 
@@ -198,7 +224,7 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div role="mark" bind:this={bracketArea} on:mousedown={handleMousedown} on:mousemove={handleMousemove} style="overflow: auto; flex-grow: 1; height: 100%; scroll-behavior: smooth !important;">
   <div use:onLoad style={`position: relative; width: ${rounds * matchWidth + (rounds-1) * gapX + 1}px; height: ${maxMatchesPerRound * matchHeight + (maxMatchesPerRound-1) * Math.abs(gapY)}px;`}>
-    {#each [...bracket.allMatchesUpper, ...(bracket.allMatchesLower ?? [])] as match, i}
+    {#each [...bracket.allMatchesUpper, ...(bracket.allMatchesLower ?? []), bracket.grandFinals] as match, i}
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
@@ -225,7 +251,7 @@
         </div>
       </div>
     {/each}
-    {#each [...connectorsUpper, ...connectorsLower] as connector, i}
+    {#each [...connectorsUpper, ...connectorsLower, ...(grandFinalsConnector ? [grandFinalsConnector] : [])] as connector}
         <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x}px; top: ${connector.top}px; width: ${connector.thickness}px; border-radius: 100px; height: ${connector.bottom - connector.top + connector.thickness}px;`}>
         </div>
         {#if connector.leftTicks}
@@ -266,6 +292,7 @@
     position: relative;
     transition: all 300ms ease-in-out;
     display: flex;
+    height: 100%;
     align-items: stretch;
     z-index: -2;
   }

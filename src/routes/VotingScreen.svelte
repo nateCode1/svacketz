@@ -18,16 +18,23 @@
     overlayVisible = true;
     match = voteOn;
 
+    // re-initalize placements
+    match?.participants.forEach(i => placements[i.data!.seed] = 999);
+
     focusedParticipantIndex = 0;
     if (match!.participants[focusedParticipantIndex].data?.media)
       mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
+    else 
+      if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
+      previewNextNoMediaTimeout = setTimeout(previewNext, 2000)
   }
+
+  let previewNextNoMediaTimeout: NodeJS.Timeout | undefined;
 
   let focusedParticipantIndex: number = 0;
   let mediaManager: MediaPlayer;
 
   let placements: entrantSeedToPlacement = {};
-  match?.participants.forEach(i => placements[i.data!.seed] = 999);
 
   type entrantSeedToPlacement = {[key: number]: number;}
 
@@ -38,8 +45,11 @@
     if (repeatPreviews) focusedParticipantIndex %= match!.participants.length;
     if (focusedParticipantIndex < match!.participants.length && match!.participants[focusedParticipantIndex].data?.media)
       mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
-    else
+    else {
       mediaManager.stop()
+      if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
+      previewNextNoMediaTimeout = setTimeout(previewNext, 2000)
+    }
   }
 
   const participantDisplay = (participant: MatchParticipant): string => {
@@ -66,6 +76,7 @@
   const endVoting = () => {
     let placementArray: Entrant[] = match?.participants.filter(i => i.data).map(i => i.data!).sort((a,b) => placements[a!.seed] - placements[b!.seed]);
     resolveMatch(match!, placementArray);
+    if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
     close();
   }
 </script>

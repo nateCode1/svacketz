@@ -38,7 +38,7 @@
         if (currentMediaType == MediaType.IMAGE)
             imagePlayer.preview(media.mediaSrc);
         if (currentMediaType == MediaType.TEXT)
-            textPlayer.preview(media.mediaSrc);
+            textPlayer.preview(media.mediaSrc); 
     }
 
 	export function init() {

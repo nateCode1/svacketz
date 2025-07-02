@@ -338,7 +338,7 @@ $\log_{\mathrm{PPM/WPM}}{(\frac{Num Participants}{PPM})} \: \% \: 1 \: == 0$
 
 For a given number of participants `P`, and a PPM to WPM ratio of `PPM / WPM = B` the number of placeholders to be added can be given as:
 
-$B^{\left(\log_{B}\left(\P\right)+1-\operatorname{mod}\left(\log_{B}\left(P\right),1\right)\right)}-P$
+$B^{\left(\log_{B}\left(P\right)+1-\operatorname{mod}\left(\log_{B}\left(P\right),1\right)\right)}-P$
 
 TODO: express that the issue is that there is no value of numparticipants that can satisfy the eqation: $\log_{\mathrm{PPM/WPM}}{(\frac{Num Participants}{PPM})} \: \% \: 1 \: == 0$
 
