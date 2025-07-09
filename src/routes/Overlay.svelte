@@ -1,9 +1,10 @@
 <script lang="ts">
     export let visible = false;
+    export let allowClose = true;
 </script>
 
 {#if visible}
-    <div class="dim-background" on:click|self={() => {visible = false;}}>
+    <div class="dim-background" on:mousedown|self={() => {if (allowClose) visible = false;}}>
         <slot></slot>
     </div>
 {/if}

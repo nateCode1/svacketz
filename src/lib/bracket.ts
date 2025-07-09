@@ -1,5 +1,5 @@
 import { assets } from "$app/paths";
-import type { MediaInfo, MediaType, Position } from "./typedef";
+import { MediaType, type MediaInfo, type Position } from "./typedef";
 
 type MatchGroupings = number[][];
 
@@ -22,19 +22,17 @@ export class Entrant {
 	name: string;
 	seed: number; // Seed is unique identifier
 	isDummy: boolean;
-	media?: MediaInfo;
+	media: MediaInfo;
 
 	constructor(name: string, seed?: number, isDummy?: boolean, mediaType?: MediaType, mediaSrc?: string) {
 		this.name = name;
 		this.seed = seed ?? Math.random();
 		this.isDummy = isDummy ? true : false; // Converts from bool? to bool, undefined=false
 
-		if (mediaType != undefined && mediaSrc != undefined) {
-			this.media = {
-				mediaSrc: mediaSrc,
-				mediaType: mediaType
-			}
-		}
+        this.media = {
+            mediaSrc: mediaSrc ?? "",
+            mediaType: mediaType ?? MediaType.NONE
+        }
 	}
 
     static getDummy(): Entrant {

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
 	import MediaPlayer from "./Media/MediaPlayer.svelte";
 	import { Match, Entrant, type MatchParticipant, type MatchResult } from "$lib/bracket";
+	import { MediaType } from "$lib/typedef";
   
   export let match: Match | null = null;
   export let overlayVisible = false;
@@ -22,7 +23,7 @@
     match?.participants.forEach(i => placements[i.data!.seed] = 999);
 
     focusedParticipantIndex = 0;
-    if (match!.participants[focusedParticipantIndex].data?.media)
+    if (match!.participants[focusedParticipantIndex].data?.media.mediaType != MediaType.NONE)
       mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
     else 
       if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
@@ -43,7 +44,7 @@
   const previewNext = () => {
     focusedParticipantIndex++
     if (repeatPreviews) focusedParticipantIndex %= match!.participants.length;
-    if (focusedParticipantIndex < match!.participants.length && match!.participants[focusedParticipantIndex].data?.media)
+    if (focusedParticipantIndex < match!.participants.length && match!.participants[focusedParticipantIndex].data?.media.mediaType != MediaType.NONE)
       mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
     else {
       mediaManager.stop()

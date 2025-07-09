@@ -130,7 +130,8 @@
   //   })
   // }
   // GenerateMatches()
-  let bracket = new Bracket(allEntrants, 1, 2)
+  // let bracket = new Bracket(allEntrants, 1, 2)
+  let bracket: Bracket;
 
   const roundNumberToTitle = (roundNum: number) => {
     let roundTitles: any = {
@@ -152,26 +153,33 @@
     bracket.allMatchesUpper = [...bracket.allMatchesUpper]
     if (bracket.allMatchesLower) bracket.allMatchesLower = [...bracket.allMatchesLower] 
   }
+
+  function endSetup(entrantList: Entrant[]) {
+    setupScreenVisible = false;
+    bracket = new Bracket(entrantList, 1, 2);
+  }
 </script>
 
-<Overlay bind:visible={setupScreenVisible}>
-  <BracketSetup />
+<Overlay bind:visible={setupScreenVisible} allowClose={false}>
+  <BracketSetup onCompleted={endSetup} />
 </Overlay>
 
-<div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
-  <VotingScreen bind:this={votingScreen} resolveMatch={resolveMatch}/>
-  <BracketUI startVoting={votingScreen?.startVoting} bracket={bracket}/>
+{#if bracket}
+  <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
+    <VotingScreen bind:this={votingScreen} resolveMatch={resolveMatch}/>
+    <BracketUI startVoting={votingScreen?.startVoting} bracket={bracket}/>
 
-  <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
-    <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
-      {#each bracket.allMatchesUpper as match}
-        <!-- {#if allMatches[rn].some(i => i.resolved == false)}
-          <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
-        {/if} -->
-        <MatchCard bind:match={match} startVoting={votingScreen?.startVoting} />
-      {/each}
+    <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
+      <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
+        {#each bracket.allMatchesUpper as match}
+          <!-- {#if allMatches[rn].some(i => i.resolved == false)}
+            <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
+          {/if} -->
+          <MatchCard bind:match={match} startVoting={votingScreen?.startVoting} />
+        {/each}
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .hover {

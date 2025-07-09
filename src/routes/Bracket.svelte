@@ -26,6 +26,8 @@
   let gapY = 10;
   let connectorThickness = 3; // Todo: make even or odd based on gap
 
+  let highlighted: MatchParticipant[] = [];
+
   let mousedown = false;
 
   let bracketArea: HTMLElement;
@@ -82,6 +84,32 @@
     lowerFinals = bracket.allMatchesLower[0];
     bracket.allMatchesLower.forEach(i => lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals);
     matchIdsToPos[lowerFinals.id] = {x: 0, y: 0}
+  }
+
+  function handleHover(match: Match, participant: MatchParticipant) {
+    highlighted = [participant]
+    if (participant.data) {
+      const addSourceToHighlighted = (p: MatchParticipant) => {
+        let participantFrom = p.from?.participants.find(i => i.data == p.data);
+        if (participantFrom) { 
+          highlighted.push(participantFrom)
+          addSourceToHighlighted(participantFrom)
+        }
+      }
+      
+      addSourceToHighlighted(participant)
+    }
+    else {
+      const addDestinationToHighlighted = (m: Match, seed: number) => {
+        let participantToIndex = m.results.findIndex(i => i.toParticipant?.theoreticalSeed == seed);
+        if (participantToIndex != -1) {
+          highlighted.push(m.results[participantToIndex].toParticipant!);
+          addDestinationToHighlighted(m.results[participantToIndex].to!, seed);
+        }
+      }
+
+      addDestinationToHighlighted(match, participant.theoreticalSeed);
+    }
   }
 
   // Runs on load with a ref to the 2nd from top div (pos relative)
@@ -230,15 +258,16 @@
       <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
       <div on:click={() => startVoting(match)} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${matchIdsToPos[match.id].x}px; top: ${matchIdsToPos[match.id].y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
-          <div class="blob"></div>
-          <div class="fake-blob"></div>
+          <!-- <div class="blob"></div> -->
+          <!-- <div class="fake-blob"></div> -->
           <div class="card-inner">
             <div style="display: flex; align-items: center; padding: 3px; border-right: 1px solid #aaa; font-size: 1.2em;">
               <p>{match.id + 1}</p>
             </div>
-            <div style="text-overflow: ellipsis; text-wrap: nowrap; display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+            <div style="text-overflow: ellipsis; text-wrap: nowrap; display: flex; flex-direction: column; align-items: stretch; justify-content: space-between; width: 100%;">
               {#each match.participants as participant, j}
-                <div class="participant" style="display: flex; padding: 2px; padding-left: 3px;">
+                <!-- svelte-ignore a11y-mouse-events-have-key-events -->
+                <div class={`participant ${highlighted.includes(participant) ? "highlighted-participant" : ""}`} style="display: flex; flex-grow: 1; padding: 2px; padding-left: 3px;" on:mouseover={() => handleHover(match, participant)} on:mouseleave={() => highlighted = []}>
                   <p style={`order: ${j * 5}; font-weight: bold; color: #aaa;`}>{participant.theoreticalSeed+1}</p>
                   <p style={`order: ${j * 5}; margin-left: 3px;`}>{participant.data?.name ?? ""}</p>
                 </div>
@@ -289,7 +318,7 @@
     margin: 0;
     background: rgb(88, 88, 88);
     border-radius: 10px;
-    position: relative;
+    /* position: relative; */
     transition: all 300ms ease-in-out;
     display: flex;
     height: 100%;
@@ -311,7 +340,7 @@
   }
   
   .match-containter:hover .card-inner {
-    background-color: rgba(60, 60, 60, 0.6)
+    background-color: rgba(60, 60, 60, 0.3)
   }
 
   .fake-blob {
@@ -338,5 +367,13 @@
     background-color: #bbf;
     /* background-image: linear-gradient( 89.7deg, rgba(223,0,0,1) 2.7%, rgba(214,91,0,1) 15.1%, rgba(233,245,0,1) 29.5%, rgba(23,255,17,1) 45.8%, rgba(29,255,255,1) 61.5%, rgba(5,17,255,1) 76.4%, rgba(202,0,253,1) 92.4% ); */
     transition: all 100ms ease-in-out;
+  }
+
+  .participant {
+    transition: 0.3s all;
+  }
+
+  .highlighted-participant {
+    background-color: rgb(43, 77, 83);
   }
 </style>

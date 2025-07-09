@@ -15,6 +15,7 @@ export type Connector = {
 
 
 export enum MediaType {
+	NONE,
 	YOUTUBE,
 	// SPOTIFY, // currently unsupported
 	IMAGE,
