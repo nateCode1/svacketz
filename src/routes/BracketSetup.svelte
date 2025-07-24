@@ -13,6 +13,9 @@
     let textEditorVisible = false;
     let textEditorFor: Entrant | undefined;
 
+    let selectedTab = 0;
+    let tabs = ["Participant Setup", "Bracket Setup"];
+
     let entrantList: Entrant[] = [
         new Entrant("JS Jumpscare", 1, false, MediaType.IMAGE, "https://m.media-amazon.com/images/I/61irQrNjgnL._UF894,1000_QL80_.jpg"),
         new Entrant("A Text", 2, false, MediaType.TEXT, ""),
@@ -57,31 +60,49 @@
 </script>
 
 <div style="background-color: #333; padding: 10px; width: 90%; max-width: 800px;">
-    <div style="padding: 5px; border: 1px solid gray; border-radius: 5px; margin-bottom: 10px; height: 300px; overflow-y: scroll;">
-        {#each entrantList as entrant, i}
-            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                <!-- <p style="line-height: 0; width: 20px;">{i}</p> -->
-                <!-- <button on:click={() => moveItem(i, -1)}>↑</button>
-                <button on:click={() => moveItem(i, 1)}>↓</button> -->
-                <input type="number" min="0" bind:value={entrant.seed} on:change={sortEntrants} style="width: 50px;" />
-                <input type="text" bind:value={entrant.name} />
-                <div style="display: flex; justify-content: center; align-items: center; width: 200px;">
-                    {#if entrant.media.mediaType == MediaType.TEXT}
-                        <button style="width: 70%;" on:click={() => editText(entrant)}>Edit Text</button>
-                    {:else}
-                        <input style="width: 100%;" disabled={entrant.media.mediaType == MediaType.NONE} type="text" bind:value={entrant.media.mediaSrc} />
-                    {/if}
-                </div>
-                <select bind:value={entrant.media.mediaType}>
-                    {#each Object.entries(MediaType).filter(i => isNaN(parseInt(i[0]))) as media}
-                        <option value={media[1]}>{media[0][0].toUpperCase()}{media[0].split("").slice(1).join("").toLowerCase()}</option>
-                    {/each}
-                </select>
-                <button on:click={() => preview(entrant)}>Preview</button>
+    <div style="display: flex; gap: 5px; margin: 0 5px -1px;">
+        {#each tabs as tab, i}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div on:click={() => {selectedTab = i}} class={`tab ${i == selectedTab ? "tab-selected" : ""}`}>
+                <p>{tab}</p>
             </div>
         {/each}
     </div>
-    <button on:click={addNew} style="width: 100%;">Add new</button>
+
+    {#if selectedTab == 0}
+        <div class="tab-content">
+            <div style="overflow-y: scroll; max-height: 100%;">
+                {#each entrantList as entrant, i}
+                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                        <!-- <p style="line-height: 0; width: 20px;">{i}</p> -->
+                        <!-- <button on:click={() => moveItem(i, -1)}>↑</button>
+                        <button on:click={() => moveItem(i, 1)}>↓</button> -->
+                        <input type="number" min="0" bind:value={entrant.seed} on:change={sortEntrants} style="width: 50px;" />
+                        <input type="text" bind:value={entrant.name} />
+                        <div style="display: flex; justify-content: center; align-items: center; width: 200px;">
+                            {#if entrant.media.mediaType == MediaType.TEXT}
+                                <button style="width: 70%;" on:click={() => editText(entrant)}>Edit Text</button>
+                            {:else}
+                                <input style="width: 100%;" disabled={entrant.media.mediaType == MediaType.NONE} type="text" bind:value={entrant.media.mediaSrc} />
+                            {/if}
+                        </div>
+                        <select bind:value={entrant.media.mediaType}>
+                            {#each Object.entries(MediaType).filter(i => isNaN(parseInt(i[0]))) as media}
+                                <option value={media[1]}>{media[0][0].toUpperCase()}{media[0].split("").slice(1).join("").toLowerCase()}</option>
+                            {/each}
+                        </select>
+                        <button on:click={() => preview(entrant)}>Preview</button>
+                    </div>
+                {/each}
+                <div style="height: 40px;"></div>
+            </div>
+            <button on:click={addNew} style="width: 90%; left: 50%; transform: translateX(-50%); position: absolute; bottom: 10px; box-shadow: 0px 0px 4px 1px rgba(140, 140, 140, 0.8);">Add new</button>
+        </div>
+    {:else if selectedTab == 1}
+        <div class="tab-content"></div>
+    {/if}
+
     <button on:click={() => onCompleted(entrantList)}>Done</button>
 
     <Overlay bind:visible={textEditorVisible}>
@@ -127,5 +148,36 @@
     input:disabled {
         background-color: #444;
         opacity: 0.6;
+    }
+
+    .tab-content {
+        padding: 5px;
+        border: 1px solid gray;
+        border-radius: 5px;
+        height: 300px;
+        position: relative;
+        margin-bottom: 10px;
+    }
+    
+    .tab {
+        border: 1px solid rgba(0,0,0,0);
+        border-bottom: none;
+        border-radius: 5px 5px 0 0;
+        padding: 0 5px;
+        transition: 0.2s all;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .tab:hover {
+        border: 1px solid rgb(100, 100, 100);
+        border-bottom: none;
+        background-color: #333;
+    }
+    
+    .tab-selected {
+        border: 1px solid gray !important;
+        border-bottom: none !important;
+        background-color: #333;
     }
 </style>

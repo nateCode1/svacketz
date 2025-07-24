@@ -21,6 +21,7 @@ export type MatchParticipant = {
 export class Entrant {
 	name: string;
 	seed: number; // Seed is unique identifier
+    exitedAs: number | undefined;
 	isDummy: boolean;
 	media: MediaInfo;
 
@@ -341,5 +342,10 @@ export class Bracket {
             winnerSeeds: winners,
             loserSeeds: losers,
         };
+    }
+
+    get allMatches() {
+        if (this.allMatchesLower) return [...this.allMatchesUpper, ...this.allMatchesLower, this.grandFinals]
+        return [...this.allMatchesUpper, this.grandFinals]
     }
 }

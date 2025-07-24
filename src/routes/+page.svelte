@@ -35,6 +35,7 @@
   let votingScreen;
 
   let setupScreenVisible: boolean = true;
+  let resultsVisible: boolean = true;
 
   // const pPerMatch = 2;
 
@@ -148,6 +149,7 @@
     match.results.forEach((i,j) => {
       i.data = matchPlacment[j];
       if (i.toParticipant) i.toParticipant.data = matchPlacment[j];
+      else matchPlacment[j].exitedAs = match.participants[j].theoreticalSeed;
     })
 
     bracket.allMatchesUpper = [...bracket.allMatchesUpper]
@@ -164,6 +166,20 @@
   <BracketSetup onCompleted={endSetup} />
 </Overlay>
 
+{#if bracket && bracket.allMatches.every(i => i.resolved)}
+  <Overlay bind:visible={resultsVisible}>
+    <div style="background-color: #444; border: 2px solid #ccc; border-radius: 5px; padding: 10px;">
+      <h1>Results</h1>
+      
+      <div style="display: flex; flex-direction: column;">
+        {#each bracket.allEntrants.sort((a,b) => (a.exitedAs??0) - (b.exitedAs??0)) as entrant, i}
+          <p style="color: white;">{i+1}. {entrant.name}</p>
+        {/each}
+      </div>
+    </div>
+  </Overlay>
+{/if}
+
 {#if bracket}
   <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
     <VotingScreen bind:this={votingScreen} resolveMatch={resolveMatch}/>
@@ -171,10 +187,7 @@
 
     <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
       <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
-        {#each bracket.allMatchesUpper as match}
-          <!-- {#if allMatches[rn].some(i => i.resolved == false)}
-            <h2 style="margin-top: 15px;">{roundNumberToTitle(rn)}</h2>
-          {/if} -->
+        {#each bracket.allMatches as match}
           <MatchCard bind:match={match} startVoting={votingScreen?.startVoting} />
         {/each}
     </div>
