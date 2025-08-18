@@ -3,6 +3,7 @@
 	import MediaPlayer from "./Media/MediaPlayer.svelte";
 	import { Match, Entrant, type MatchParticipant, type MatchResult } from "$lib/bracket";
 	import { MediaType } from "$lib/typedef";
+  import DraggableEntrantList from './DraggableEntrantList.svelte';
   
   export let match: Match | null = null;
   export let overlayVisible = false;
@@ -16,11 +17,12 @@
 
   export const startVoting = (voteOn: Match) => {
     // TODO: Add check that all prerequisite matches have been resolved (i.e. no participants are dummy)
+    if (voteOn.participants.some(i => i.data == undefined)) return
+
     overlayVisible = true;
     match = voteOn;
 
-    // re-initalize placements
-    match?.participants.forEach(i => placements[i.data!.seed] = 999);
+    sortedEntrantList = match?.participants.map(i => i.data!)
 
     focusedParticipantIndex = 0;
     if (match!.participants[focusedParticipantIndex].data?.media.mediaType != MediaType.NONE)
@@ -35,9 +37,7 @@
   let focusedParticipantIndex: number = 0;
   let mediaManager: MediaPlayer;
 
-  let placements: entrantSeedToPlacement = {};
-
-  type entrantSeedToPlacement = {[key: number]: number;}
+  let sortedEntrantList: Entrant[];
 
   onMount(() => mediaManager.init())
 
@@ -67,16 +67,8 @@
     return result.to ? `Advances to Match ${result.to.id}` : "TBD";
   };
 
-  const setPlacement = (winner: Entrant, placement: number) => {
-    let alreadyHasPlacement = match!.participants.filter(i => placements[i.data?.seed ?? -1] == placement);
-    alreadyHasPlacement.forEach(i => setPlacement(i.data!, placements[i.data!.seed]+1))
-    
-    placements[winner.seed] = placement;
-  }
-
   const endVoting = () => {
-    let placementArray: Entrant[] = match?.participants.filter(i => i.data).map(i => i.data!).sort((a,b) => placements[a!.seed] - placements[b!.seed]);
-    resolveMatch(match!, placementArray);
+    resolveMatch(match!, sortedEntrantList);
     if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
     close();
   }
@@ -99,13 +91,12 @@
           {#if participant.data}
             <div class={`participant-container ${i == focusedParticipantIndex ? 'participant-container-focused' : ''}`}>
               <h2>{participantDisplay(participant)}</h2>
-              {#each Array(match.participants.length).fill(0).map((_,j) => j+1) as i}
-                <button class={`${(placements[participant.data.seed] == i) ? "selected-placement" : ""}`} on:click={() => {if (participant.data) setPlacement(participant.data, i)}}>{i}</button>
-              {/each}
             </div>
           {/if}
         {/each}
       </div>
+
+      <DraggableEntrantList sortedEntrants={sortedEntrantList}/>
     {/if}
     
     <MediaPlayer

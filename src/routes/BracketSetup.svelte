@@ -5,7 +5,7 @@
 	import MediaPlayer from "./Media/MediaPlayer.svelte";
 	import Overlay from "./Overlay.svelte";
 
-    export let onCompleted: (param: Entrant[]) => void;
+    export let onCompleted: (entrants: Entrant[]) => void;
 
     let mediaManager: MediaPlayer;
     let mediaPreviewVisible = false;
@@ -18,8 +18,23 @@
 
     let entrantList: Entrant[] = [
         new Entrant("JS Jumpscare", 1, false, MediaType.IMAGE, "https://m.media-amazon.com/images/I/61irQrNjgnL._UF894,1000_QL80_.jpg"),
-        new Entrant("A Text", 2, false, MediaType.TEXT, ""),
+        new Entrant("A Text", 2, false, MediaType.TEXT, "Wow"),
+        new Entrant("A three", 3, false, MediaType.TEXT, "Three text three text!"),
+        new Entrant("Dare I four?", 4, false, MediaType.TEXT, "# Yes it is true"),
     ];
+
+    let participantsPerMatch = 2;
+    let winnersPerMatch = 1;
+    let isDoubleElimination = false;
+
+    let errorMessages: string[] = [];
+
+    function errorCheck() {
+        errorMessages = [];
+        if (participantsPerMatch < 2) errorMessages.push("Can't have fewer than 2 participants per match.");
+        if (winnersPerMatch * 2 > participantsPerMatch) errorMessages.push("Can't have winners per match be over half of participants per match.");
+        else if (winnersPerMatch < 1)  errorMessages.push("Can't have fewer than 1 winners per match.");
+    }
 
     function addNew() {
         entrantList.push(new Entrant(
@@ -100,7 +115,23 @@
             <button on:click={addNew} style="width: 90%; left: 50%; transform: translateX(-50%); position: absolute; bottom: 10px; box-shadow: 0px 0px 4px 1px rgba(140, 140, 140, 0.8);">Add new</button>
         </div>
     {:else if selectedTab == 1}
-        <div class="tab-content"></div>
+        <div class="tab-content">
+            <div class="input-block">
+                <p>Participants per match:</p>
+                <input type="number" style="width: 50px;" on:change={errorCheck} bind:value={participantsPerMatch} min={2}/>
+            </div>
+            <div class="input-block">
+                <p>Winners per match:</p>
+                <input type="number" style="width: 50px;" on:change={errorCheck} bind:value={winnersPerMatch} min={1}/>
+            </div>
+            <div class="input-block">
+                <p>Double elimination?:</p>
+                <input type="checkbox" style="width: 15px;" bind:value={isDoubleElimination}/>
+            </div>
+            {#each errorMessages as error}
+                <p style="color: red; margin: 2px 0;">{error}</p>
+            {/each}
+        </div>
     {/if}
 
     <button on:click={() => onCompleted(entrantList)}>Done</button>
@@ -179,5 +210,12 @@
         border: 1px solid gray !important;
         border-bottom: none !important;
         background-color: #333;
+    }
+
+    .input-block {
+        display: flex;
+        gap: 10px;
+        height: 30px;
+        align-items: center;
     }
 </style>
