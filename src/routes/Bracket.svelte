@@ -37,6 +37,7 @@
 
   //Function to set the position of feeder matches relative to the current match
   const setChildPositions = (match: Match): Connector[] => {
+    console.log(`matchid ${match.id}`)
     let allConnectors: Connector[] = [];
     let pos = matchIdsToPos[match.id];
 
@@ -46,6 +47,7 @@
         let childPos = matchIdsToPos[child.from.id]
 
         childPos.x = child.from.round * (matchWidth + gapX);
+        console.log(`child.from.round ${child.from.round}`)
 
         let numDrawnIncomingConnections = match.participants.filter(i => i.fromResult?.draw).length;
 
@@ -72,18 +74,6 @@
     })
     
     return allConnectors;
-  }
-
-  //Set the finals to be the root, then calculate backwards from there
-  let upperFinals = bracket.allMatchesUpper[0];
-  bracket.allMatchesUpper.forEach(i => upperFinals = i.round > upperFinals.round ? i : upperFinals);
-  matchIdsToPos[upperFinals.id] = {x: 0, y: 0}
-
-  let lowerFinals: Match | undefined;
-  if (bracket.allMatchesLower) {
-    lowerFinals = bracket.allMatchesLower[0];
-    bracket.allMatchesLower.forEach(i => lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals);
-    matchIdsToPos[lowerFinals.id] = {x: 0, y: 0}
   }
 
   function handleHover(match: Match, participant: MatchParticipant) {
@@ -145,6 +135,18 @@
       })
     }
 
+    //Set the finals to be the root, then calculate backwards from there
+    let upperFinals = bracket.allMatchesLower ? bracket.allMatchesUpper[0] : bracket.grandFinals;
+    bracket.allMatchesUpper.forEach(i => upperFinals = i.round > upperFinals.round ? i : upperFinals);
+    matchIdsToPos[upperFinals.id] = {x: 0, y: 0}
+
+    let lowerFinals: Match | undefined;
+    if (bracket.allMatchesLower) {
+      lowerFinals = bracket.allMatchesLower[0];
+      bracket.allMatchesLower.forEach(i => lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals);
+      matchIdsToPos[lowerFinals.id] = {x: 0, y: 0}
+    }
+
     document.addEventListener("mouseup", handleMouseup);
 
     connectorsUpper = setChildPositions(upperFinals);
@@ -178,6 +180,9 @@
         ],
         rightTicks: [grandFinalPos.y + matchHeight/2]
       }
+    }
+    else {
+      offsetMatches([bracket.grandFinals], minUpper)
     }
 
     // console.log("Upper bracket connectors", connectorsUpper)

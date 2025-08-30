@@ -9,15 +9,17 @@
   export let overlayVisible = false;
   export let resolveMatch: (match: Match, placements: Entrant[]) => void;
   export let repeatPreviews = false;
+  export let maxPreviewLength = 5;
 
   export let close = () => {
     mediaManager.stop();
+    if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
     overlayVisible = false;
   };
 
   export const startVoting = (voteOn: Match) => {
-    // TODO: Add check that all prerequisite matches have been resolved (i.e. no participants are dummy)
-    if (voteOn.participants.some(i => i.data == undefined)) return
+    if (voteOn.participants.some(i => i.data == undefined)) return // Ensures all matches leading to this one have been resolved 
+    if (voteOn.resolved) return // Can't vote on a match that is already completed
 
     overlayVisible = true;
     match = voteOn;
@@ -27,9 +29,10 @@
     focusedParticipantIndex = 0;
     if (match!.participants[focusedParticipantIndex].data?.media.mediaType != MediaType.NONE)
       mediaManager.preview(match!.participants[focusedParticipantIndex].data?.media!)
-    else 
+    else {
       if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
-      previewNextNoMediaTimeout = setTimeout(previewNext, 2000)
+      previewNextNoMediaTimeout = setTimeout(previewNext, maxPreviewLength * 1000)
+    }
   }
 
   let previewNextNoMediaTimeout: NodeJS.Timeout | undefined;
@@ -49,7 +52,7 @@
     else {
       mediaManager.stop()
       if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
-      previewNextNoMediaTimeout = setTimeout(previewNext, 2000)
+      previewNextNoMediaTimeout = setTimeout(previewNext, maxPreviewLength * 1000)
     }
   }
 
@@ -69,7 +72,6 @@
 
   const endVoting = () => {
     resolveMatch(match!, sortedEntrantList);
-    if (previewNextNoMediaTimeout) clearTimeout(previewNextNoMediaTimeout)
     close();
   }
 </script>
@@ -85,7 +87,7 @@
         <p style="margin: 0;">Round: {match.round}</p>
       </div>
 
-      <h3>Participants</h3>
+      <!-- <h3>Participants</h3>
       <div class="all-participant-containter">
         {#each match.participants as participant, i}
           {#if participant.data}
@@ -94,16 +96,19 @@
             </div>
           {/if}
         {/each}
-      </div>
+      </div> -->
 
       <DraggableEntrantList sortedEntrants={sortedEntrantList}/>
     {/if}
     
-    <MediaPlayer
-      maxPreviewLength={10} 
-      previewDoneCallback={previewNext} 
-      bind:this={mediaManager} 
-    />
+    <div style="margin-top: 10px;">
+      <h2 style="color: #ccc; margin-bottom: 5px;">Now Previewing: {match?.participants[focusedParticipantIndex]?.data?.name ?? ""}</h2>
+      <MediaPlayer
+        maxPreviewLength={maxPreviewLength} 
+        previewDoneCallback={previewNext} 
+        bind:this={mediaManager} 
+      />
+    </div>
 
     <button on:click={() => endVoting()}>End voting</button>
 

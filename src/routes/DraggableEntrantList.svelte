@@ -7,8 +7,8 @@
 	
     export let sortedEntrants: Entrant[];
 
-    let mouseYCoordinate: number = 0; // pointer y coordinate within client
-    let distanceTopGrabbedVsPointer: number = 0;
+    let mouseXCoordinate: number = 0; // pointer y coordinate within client
+    let distanceLeftGrabbedVsPointer: number = 0;
 
     let draggingItem: Entrant | null = null;
     let draggingItemId: number | null = null;
@@ -16,9 +16,11 @@
 
     let hoveredItemIndex: number | null = null;
 
+    let elements = new Array(sortedEntrants.length);
+
     let container: HTMLDivElement;
     let ghost: HTMLDivElement;
-    let ghostTop: number = 0;
+    let ghostLeft: number = 0;
 
     $: {
         if (
@@ -41,40 +43,41 @@
     $: {
         if (container && ghost) {
             let containerBoundingRect = container.getBoundingClientRect();
-            ghostTop = mouseYCoordinate + distanceTopGrabbedVsPointer - containerBoundingRect.y
-            ghostTop = Math.min(containerBoundingRect.height - ghost.getBoundingClientRect().height, ghostTop)
-            ghostTop = Math.max(0, ghostTop)
+            ghostLeft = mouseXCoordinate + distanceLeftGrabbedVsPointer - containerBoundingRect.x
+            ghostLeft = Math.min(containerBoundingRect.width - ghost.getBoundingClientRect().width, ghostLeft)
+            ghostLeft = Math.max(0, ghostLeft)
         }
     }
 
 </script>
 
 <div class="container" bind:this={container}>
-    {#if mouseYCoordinate}
+    {#if mouseXCoordinate}
         <div
             bind:this={ghost}
             class="item ghost"
-            style="top: {ghostTop}px;">
+            style="left: {ghostLeft}px;">
             {displayText(draggingItem)}
         </div>
     {/if}
 
-    {#each sortedEntrants as item, index (item)}
+    {#each sortedEntrants as item, index}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
+            bind:this={elements[index]}
             class="item {draggingItemId == item.seed ? 'invisible' : ''}"
             draggable="true"
             on:dragstart={(e) => {
-                mouseYCoordinate = e.clientY;
+                mouseXCoordinate = e.clientX;
 
                 draggingItem = item;
                 draggingItemIndex = index;
                 draggingItemId = item.seed;
 
-                if (e.target) distanceTopGrabbedVsPointer = e.target.getBoundingClientRect().y - e.clientY;
+                if (e.target) distanceLeftGrabbedVsPointer = e.target.getBoundingClientRect().x - e.clientX;
             }}
             on:drag={(e) => {
-                mouseYCoordinate = e.clientY;
+                mouseXCoordinate = e.clientX;
             }}
             on:dragover={(e) => {
                 hoveredItemIndex = index;
@@ -91,8 +94,6 @@
 <!-- {draggingItemIndex}
 {hoveredItemIndex}
 <br />
-mouseYCoordinate:
-{mouseYCoordinate}
 distanceTopGrabbedVsPointer:
 {distanceTopGrabbedVsPointer}
 <br />
@@ -108,12 +109,12 @@ distanceTopGrabbedVsPointer:
         border-radius: 3px;
         border: 1px solid #aaa;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 10px;
     }
 
     .item {
-        width: 300px;
+        width: 100px;
         background: white;
         padding: 10px;
         cursor: grab;
