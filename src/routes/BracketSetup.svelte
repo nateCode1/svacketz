@@ -20,7 +20,12 @@
         new Entrant("JS Jumpscare", 1, false, MediaType.IMAGE, "https://m.media-amazon.com/images/I/61irQrNjgnL._UF894,1000_QL80_.jpg"),
         new Entrant("A Text", 2, false, MediaType.TEXT, "Wow"),
         new Entrant("A three", 3, false, MediaType.TEXT, "Three text three text!"),
-        new Entrant("Dare I four?", 4, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("44444", 4, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("55555", 5, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("66666", 6, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("77777", 7, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("88888", 8, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("99999", 9, false, MediaType.TEXT, "# Yes it is true"),
     ];
 
     let participantsPerMatch = 2;

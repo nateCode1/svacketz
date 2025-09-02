@@ -75,6 +75,7 @@
   }
 
   function handleHover(match: Match, participant: MatchParticipant) {
+    // TODO: search backwards
     highlighted = [participant]
     if (participant.data) {
       const addSourceToHighlighted = (p: MatchParticipant) => {
@@ -250,6 +251,10 @@
     })
   }
 
+  const logMatch = (m: Match) => {
+    console.log(`Match ${m.id}\nParticipants: ${m.participants.map(i => i.theoreticalSeed+1)}\nTo: ${m.results.map(i => (i.to?.id ?? -10)+1)}`)
+  }
+
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -259,7 +264,7 @@
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
-      <div on:click={() => startVoting(match)} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${matchIdsToPos[match.id].x}px; top: ${matchIdsToPos[match.id].y}px;`}>
+      <div on:click={() => {logMatch(match); startVoting(match)}} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${matchIdsToPos[match.id].x}px; top: ${matchIdsToPos[match.id].y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
           <!-- <div class="blob"></div> -->
           <!-- <div class="fake-blob"></div> -->
