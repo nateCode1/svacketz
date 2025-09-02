@@ -145,7 +145,7 @@ export class Bracket {
         // - Lower Bracket -
         let allRoundsLower: Round[] | undefined;
         if (generateLowerBracket) {
-            let losersBlueprint = this.losersBlueprint;
+            let losersBlueprint = this.getLosersBlueprint(allRoundsUpper[0].loserSeeds.length);
             
             // Create 1st round
             let placeholders1stRound = losersBlueprint[0].numParticipants - allRoundsUpper[0].loserSeeds.length;
@@ -156,19 +156,15 @@ export class Bracket {
             // Create subsequent rounds
             let currLowerRound = 0;
             losersBlueprint.forEach((roundBlueprint, j) => {
-                console.log(currLowerRound)
-                currLowerRound++;
                 if (roundBlueprint.isHalfRound) {
                     let currRound = this.getSingleRound(allRoundsLower![allRoundsLower!.length - 1].winnerSeeds)
                     currRound.fedFrom.push(allRoundsLower![allRoundsLower!.length - 1]);
                     allRoundsLower!.push(currRound);
                 }
                 else {
+                    currLowerRound++;
                     let roundParticipants = [...allRoundsLower![allRoundsLower!.length - 1].winnerSeeds, ...(allRoundsUpper[currLowerRound]?.loserSeeds ?? [])];
                     let requiredPlaceholders = roundBlueprint.numParticipants - roundParticipants.length;
-                    console.log("AAAAAAAAAAAAAAAAAHINSBDiSABDIUBd", roundBlueprint.numParticipants)
-                    console.log("AAAAAAAAAAAAAAAAAHINSBDiSABDIUBd", roundParticipants.length)
-                    console.log("AAAAAAAAAAAAAAAAAHINSBDiSABDIUBd", currLowerRound)
                     let currRound = this.getSingleRound(roundParticipants, {setNumPlaceholders: requiredPlaceholders})
                     currRound.fedFrom.push(allRoundsLower![allRoundsLower!.length - 1], allRoundsUpper[currLowerRound]);
                     allRoundsLower!.push(currRound);
@@ -370,43 +366,44 @@ export class Bracket {
         };
     }
 
-    get losersBlueprint(): RoundBlueprint[] {
+    getLosersBlueprint(minFirstRoundParticipants: number): RoundBlueprint[] {
         // shorthand for readability
         let ppm = this.participantsPerMatch;
         let wpm = this.winnersPerMatch;
+        // minFirstRoundParticipants = 50;
 
-        //                              From 1st losers                                              From 2nd Winners
-        let minFirstRoundParticipants = this.allEntrants.length * ((ppm - wpm) / ppm) * (wpm / ppm) + this.allEntrants.length * (wpm / ppm) * ((ppm - wpm) / ppm);
-
-        console.log(`Min 1st round: ${minFirstRoundParticipants}\nPPM: ${ppm}\nWPM: ${wpm}`)
+        // console.log(`Min 1st round: ${minFirstRoundParticipants}\nPPM: ${ppm}\nWPM: ${wpm}`)
 
         let bp: RoundBlueprint[] = [];
+
+        let i = 0;
 
         let nextRoundLosers = ppm - wpm;
         let inWinners = ppm;
         let fromWinners = inWinners * ((ppm - wpm) / ppm);
         let totalLosers = nextRoundLosers * (ppm / wpm);
-        let inLosers = totalLosers - fromWinners;
-        // bp.push({numParticipants: inLosers, isHalfRound: false})
-        while (inLosers < minFirstRoundParticipants || bp[bp.length - 1].isHalfRound) {
+        let fromLosers = totalLosers - fromWinners;
+        bp.push({ numParticipants: totalLosers, isHalfRound: false });
+        while (i < 10 && (totalLosers < minFirstRoundParticipants || bp[bp.length - 1].isHalfRound)) {
+            i++;
             inWinners *= (ppm / wpm)
-            nextRoundLosers = inLosers;
+            nextRoundLosers = fromLosers;
             fromWinners = inWinners * ((ppm - wpm) / ppm);
             totalLosers = nextRoundLosers * (ppm / wpm);
+            fromLosers = totalLosers - fromWinners;
             
+            // console.log(`FW: ${fromWinners} \n TL: ${totalLosers}`)
             if (fromWinners >= totalLosers) {
                 inWinners /= (ppm / wpm)
-                inLosers = totalLosers; 
-                bp.push({numParticipants: inLosers, isHalfRound: true})
+                fromLosers = totalLosers;
+                bp.push({ numParticipants: totalLosers, isHalfRound: true });
             }
             else {
-                inLosers = totalLosers - fromWinners;
-                bp.push({numParticipants: inLosers, isHalfRound: false})
+                bp.push({ numParticipants: totalLosers, isHalfRound: false });
             }
-            console.log(`FW: ${fromWinners} \n TL: ${totalLosers}`)
         }
 
-        console.log("BP", bp)
+        console.log("Loser's Blueprint", bp)
         return bp.reverse();
     }
 
