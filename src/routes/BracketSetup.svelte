@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Entrant } from "$lib/bracket";
+    import { Bracket, Entrant } from "$lib/bracket";
 	import { MediaType } from "$lib/typedef";
 	import SvelteMarkdown from "svelte-markdown";
 	import MediaPlayer from "./Media/MediaPlayer.svelte";

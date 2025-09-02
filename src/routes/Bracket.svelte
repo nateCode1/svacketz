@@ -37,7 +37,6 @@
 
   //Function to set the position of feeder matches relative to the current match
   const setChildPositions = (match: Match): Connector[] => {
-    console.log(`matchid ${match.id}`)
     let allConnectors: Connector[] = [];
     let pos = matchIdsToPos[match.id];
 
@@ -47,7 +46,6 @@
         let childPos = matchIdsToPos[child.from.id]
 
         childPos.x = child.from.round * (matchWidth + gapX);
-        console.log(`child.from.round ${child.from.round}`)
 
         let numDrawnIncomingConnections = match.participants.filter(i => i.fromResult?.draw).length;
 
