@@ -158,7 +158,7 @@
 
   function endSetup(entrantList: Entrant[]) {
     setupScreenVisible = false;
-    bracket = new Bracket(entrantList, 1, 2);
+    bracket = new Bracket(entrantList, 1, 3);
   }
 </script>
 

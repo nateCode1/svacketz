@@ -15,7 +15,7 @@
   type matchIdToPos = {[key: number]: Position;}
 
   let connectorsUpper: Connector[] = [];
-  let connectorsLower: Connector[] = [];
+  let allConnectorsLower: Connector[] = [];
   let grandFinalsConnector: Connector;
   let maxMatchesPerRound = bracket.allEntrants.length / bracket.participantsPerMatch; // Todo: useless variable
   let rounds = Math.log2(bracket.allEntrants.length)
@@ -35,14 +35,26 @@
 
   let debounceHideGlow: NodeJS.Timeout;
 
+  //Function to recursively get list of all feeder matches (drawn connections only)
+  const getAllChildren = (match: Match): Match[] => {
+    let allMatches = [match];
+    match.participants.forEach((child: MatchParticipant) => {
+      if (child.from && child.fromResult!.draw) allMatches.push(...getAllChildren(child.from))
+    })
+    return allMatches;
+  }
+
   //Function to set the position of feeder matches relative to the current match
   const setChildPositions = (match: Match): Connector[] => {
     let allConnectors: Connector[] = [];
     let pos = matchIdsToPos[match.id];
-
+    pos.x = match.round * (matchWidth + gapX);
+    if (match.id == 8) console.log("Placing 10 at: ", pos)
+    
     match.participants.forEach((child: MatchParticipant, i: number) => {
-      pos.x = match.round * (matchWidth + gapX);
       if (child.from && child.fromResult!.draw) {
+        if (match.id == 8) console.log("Placing child: ", child.from.id)
+
         let childPos = matchIdsToPos[child.from.id]
 
         childPos.x = child.from.round * (matchWidth + gapX);
@@ -139,11 +151,15 @@
     bracket.allMatchesUpper.forEach(i => upperFinals = i.round > upperFinals.round ? i : upperFinals);
     matchIdsToPos[upperFinals.id] = {x: 0, y: 0}
 
-    let lowerFinals: Match | undefined;
+    let lowerFinalRoundMatches: Match[] = [];
     if (bracket.allMatchesLower) {
-      lowerFinals = bracket.allMatchesLower[0];
-      bracket.allMatchesLower.forEach(i => lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals);
-      matchIdsToPos[lowerFinals.id] = {x: 0, y: 0}
+      lowerFinalRoundMatches = [bracket.allMatchesLower[0]];
+      // lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals
+      bracket.allMatchesLower.forEach(i => {
+        if (i.round > lowerFinalRoundMatches[0].round) lowerFinalRoundMatches = [i]
+        else if (i.round == lowerFinalRoundMatches[0].round) lowerFinalRoundMatches.push(i)
+      });
+      lowerFinalRoundMatches.forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
     }
 
     document.addEventListener("mouseup", handleMouseup);
@@ -155,27 +171,35 @@
     connectorsUpper = [...connectorsUpper] // trigger a rerender now that connectors is populated
 
     if (bracket.allMatchesLower) {
-      connectorsLower = setChildPositions(lowerFinals!);
-      let {min: minLower, max: maxLower} = getMatchesMinMaxPos(bracket.allMatchesLower);
-      let {min: minUpperNew, max: maxUpperNew} = getMatchesMinMaxPos(bracket.allMatchesUpper);
-      let lowerBracketOffset = {x: minLower.x, y: minLower.y - maxUpperNew.y - matchHeight - 40};
-      offsetMatches(bracket.allMatchesLower, lowerBracketOffset);
-      offsetConnectors(connectorsLower, lowerBracketOffset);
-      connectorsLower = [...connectorsLower]
+      lowerFinalRoundMatches.forEach((finalRoundMatch, i) => {
+        let currentConnectorsLower = setChildPositions(finalRoundMatch!);
+        let {min: minLower, max: maxLower} = getMatchesMinMaxPos(getAllChildren(finalRoundMatch));
+        let {min: minUpperNew, max: maxUpperNew} = getMatchesMinMaxPos(i == 0 ? bracket.allMatchesUpper : getAllChildren(lowerFinalRoundMatches[i-1]));
+        let manualExtraGap = i == 0 ? 40 : 0; // Only for gap between upper and lower
+        let lowerBracketOffset = {x: minLower.x, y: minLower.y - maxUpperNew.y - matchHeight - manualExtraGap};
+        offsetMatches(getAllChildren(finalRoundMatch), lowerBracketOffset);
+        offsetConnectors(currentConnectorsLower, lowerBracketOffset);
+        allConnectorsLower = [...allConnectorsLower, ...currentConnectorsLower]
+      })
+
+      let meanYPosLowerFinalRoundMatches = lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].y).reduce((a,b) => a+b) / lowerFinalRoundMatches.length;
+      let maxXPosLowerFinalRoundMatches = Math.max(...lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].x));
 
       let grandFinalPos = matchIdsToPos[bracket.grandFinals.id];
-      grandFinalPos.y = (matchIdsToPos[upperFinals.id].y + matchIdsToPos[lowerFinals!.id].y) / 2;
-      grandFinalPos.x = Math.max(matchIdsToPos[upperFinals.id].x, matchIdsToPos[lowerFinals!.id].x) + matchWidth + gapX;
+      grandFinalPos.y = (matchIdsToPos[upperFinals.id].y + meanYPosLowerFinalRoundMatches) / 2;
+      grandFinalPos.x = Math.max(matchIdsToPos[upperFinals.id].x, maxXPosLowerFinalRoundMatches) + matchWidth + gapX;
+
+      let maxYPosLowerFinalRoundMatches = Math.max(...lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].y));
 
       grandFinalsConnector = {
         thickness: connectorThickness, 
         tickSize: gapX/2,
         x: grandFinalPos.x - gapX/2,
         top: matchIdsToPos[upperFinals.id].y + matchHeight/2,
-        bottom: matchIdsToPos[lowerFinals!.id].y + matchHeight/2,
+        bottom: maxYPosLowerFinalRoundMatches + matchHeight/2,
         leftTicks: [
           matchIdsToPos[upperFinals.id].y + matchHeight/2,
-          matchIdsToPos[lowerFinals!.id].y + matchHeight/2
+          ...lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].y + matchHeight/2)
         ],
         rightTicks: [grandFinalPos.y + matchHeight/2]
       }
@@ -252,7 +276,8 @@
   }
 
   const logMatch = (m: Match) => {
-    console.log(`Match ${m.id}\nParticipants: ${m.participants.map(i => i.theoreticalSeed+1)}\nTo: ${m.results.map(i => (i.to?.id ?? -10)+1)}`)
+    console.log(`Match ${m.id+1}\nRound ${m.round}\nParticipants: ${m.participants.map(i => i.theoreticalSeed+1)}\nTo: ${m.results.map(i => (i.to?.id ?? -1000)+1)}`)
+    console.log("Pos", matchIdsToPos[m.id])
   }
 
 </script>
@@ -288,7 +313,7 @@
         </div>
       </div>
     {/each}
-    {#each [...connectorsUpper, ...connectorsLower, ...(grandFinalsConnector ? [grandFinalsConnector] : [])] as connector}
+    {#each [...connectorsUpper, ...allConnectorsLower, ...(grandFinalsConnector ? [grandFinalsConnector] : [])] as connector}
         <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x}px; top: ${connector.top}px; width: ${connector.thickness}px; border-radius: 100px; height: ${connector.bottom - connector.top + connector.thickness}px;`}>
         </div>
         {#if connector.leftTicks}
