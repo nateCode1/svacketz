@@ -20,8 +20,9 @@
   let maxMatchesPerRound = bracket.allEntrants.length / bracket.participantsPerMatch; // Todo: useless variable
   let rounds = Math.log2(bracket.allEntrants.length)
 
+  const getMatchHeight = (nParticipants: number): number => 9 + 21 * nParticipants
   let matchWidth = 140;
-  let matchHeight = 9 + 21 * bracket.participantsPerMatch;
+  let matchHeight = getMatchHeight(bracket.participantsPerMatch);
   let gapX = 20;
   let gapY = 10;
   let connectorThickness = 3; // Todo: make even or odd based on gap
@@ -49,11 +50,10 @@
     let allConnectors: Connector[] = [];
     let pos = matchIdsToPos[match.id];
     pos.x = match.round * (matchWidth + gapX);
-    if (match.id == 8) console.log("Placing 10 at: ", pos)
     
-    match.participants.forEach((child: MatchParticipant, i: number) => {
+    let i = 0;
+    match.participants.forEach((child: MatchParticipant) => {
       if (child.from && child.fromResult!.draw) {
-        if (match.id == 8) console.log("Placing child: ", child.from.id)
 
         let childPos = matchIdsToPos[child.from.id]
 
@@ -62,8 +62,9 @@
         let numDrawnIncomingConnections = match.participants.filter(i => i.fromResult?.draw).length;
 
         let childrenTall = match.childrenTall;
-        const yOffFromIndex = (i: number) => (numDrawnIncomingConnections == 1) ? 7 : childrenTall/2 * (matchHeight + gapY) * (i / (match.participants.length - 1) - 0.5)
-        
+        let numSourceMatches = match.participants.filter(i => i.from && i.from.results[0].to == match).length;
+        const yOffFromIndex = (i: number) => (numDrawnIncomingConnections == 1) ? gapY : (childrenTall/numSourceMatches) * (matchHeight + gapY) * (i - 0.5 * (numSourceMatches - 1))
+
         childPos.y = pos.y + yOffFromIndex(i);
         allConnectors.push(...setChildPositions(child.from));
 
@@ -74,12 +75,14 @@
           tickSize: (pos.x - (childPos.x + matchWidth))/2,
           x: (pos.x + (childPos.x + matchWidth))/2,
           top: ((numDrawnIncomingConnections == 1) ? pos.y : pos.y + yOffFromIndex(0)) + yOff,
-          bottom: pos.y + yOffFromIndex(match.participants.length - 1) + yOff,
+          bottom: pos.y + yOffFromIndex(numSourceMatches - 1) + yOff,
           leftTicks: Array(numDrawnIncomingConnections).fill(0).map((_, i) => pos.y + yOffFromIndex(i) + yOff),
           rightTicks: [pos.y + yOff]
         };
         
         allConnectors.push(matchConnector);
+        
+        i++;
       }
     })
     
@@ -276,7 +279,7 @@
   }
 
   const logMatch = (m: Match) => {
-    console.log(`Match ${m.id+1}\nRound ${m.round}\nParticipants: ${m.participants.map(i => i.theoreticalSeed+1)}\nTo: ${m.results.map(i => (i.to?.id ?? -1000)+1)}`)
+    console.log(`Match ${m.id+1}\nRound ${m.round}\nParticipants: ${m.participants.map(i => i.theoreticalSeed+1)}\nTo: ${m.results.map(i => (i.to?.id ?? -1000)+1)}\nCT: ${m.childrenTall}`)
     console.log("Pos", matchIdsToPos[m.id])
   }
 

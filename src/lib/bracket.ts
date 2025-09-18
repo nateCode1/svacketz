@@ -145,8 +145,7 @@ export class Bracket {
         // - Lower Bracket -
         let allRoundsLower: Round[] | undefined;
         if (generateLowerBracket) {
-            let losersBlueprint = this.getLosersBlueprint(allRoundsUpper[0].loserSeeds.length);
-
+            let losersBlueprint = this.getLosersBlueprint(allEntrants.length * ((participantsPerMatch - winnersPerMatch) / participantsPerMatch));
             
             // Create 1st round
             let placeholders1stRound = losersBlueprint[0].numParticipants - allRoundsUpper[0].loserSeeds.length;
