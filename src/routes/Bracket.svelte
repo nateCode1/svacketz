@@ -15,13 +15,14 @@
   type matchIdToPos = {[key: number]: Position;}
 
   let connectorsUpper: Connector[] = [];
-  let connectorsLower: Connector[] = [];
+  let allConnectorsLower: Connector[] = [];
   let grandFinalsConnector: Connector;
   let maxMatchesPerRound = bracket.allEntrants.length / bracket.participantsPerMatch; // Todo: useless variable
   let rounds = Math.log2(bracket.allEntrants.length)
 
+  const getMatchHeight = (nParticipants: number): number => 9 + 21 * nParticipants
   let matchWidth = 140;
-  let matchHeight = 9 + 21 * bracket.participantsPerMatch;
+  let matchHeight = getMatchHeight(bracket.participantsPerMatch);
   let gapX = 20;
   let gapY = 10;
   let connectorThickness = 3; // Todo: make even or odd based on gap
@@ -35,25 +36,35 @@
 
   let debounceHideGlow: NodeJS.Timeout;
 
+  //Function to recursively get list of all feeder matches (drawn connections only)
+  const getAllChildren = (match: Match): Match[] => {
+    let allMatches = [match];
+    match.participants.forEach((child: MatchParticipant) => {
+      if (child.from && child.fromResult!.draw) allMatches.push(...getAllChildren(child.from))
+    })
+    return allMatches;
+  }
+
   //Function to set the position of feeder matches relative to the current match
   const setChildPositions = (match: Match): Connector[] => {
-    console.log(`matchid ${match.id}`)
     let allConnectors: Connector[] = [];
     let pos = matchIdsToPos[match.id];
-
-    match.participants.forEach((child: MatchParticipant, i: number) => {
-      pos.x = match.round * (matchWidth + gapX);
+    pos.x = match.round * (matchWidth + gapX);
+    
+    let i = 0;
+    match.participants.forEach((child: MatchParticipant) => {
       if (child.from && child.fromResult!.draw) {
+
         let childPos = matchIdsToPos[child.from.id]
 
         childPos.x = child.from.round * (matchWidth + gapX);
-        console.log(`child.from.round ${child.from.round}`)
 
         let numDrawnIncomingConnections = match.participants.filter(i => i.fromResult?.draw).length;
 
         let childrenTall = match.childrenTall;
-        const yOffFromIndex = (i: number) => (numDrawnIncomingConnections == 1) ? 7 : childrenTall/2 * (matchHeight + gapY) * (i / (match.participants.length - 1) - 0.5)
-        
+        let numSourceMatches = match.participants.filter(i => i.from && i.from.results[0].to == match).length;
+        const yOffFromIndex = (i: number) => (numDrawnIncomingConnections == 1) ? gapY : (childrenTall/numSourceMatches) * (matchHeight + gapY) * (i - 0.5 * (numSourceMatches - 1))
+
         childPos.y = pos.y + yOffFromIndex(i);
         allConnectors.push(...setChildPositions(child.from));
 
@@ -64,12 +75,14 @@
           tickSize: (pos.x - (childPos.x + matchWidth))/2,
           x: (pos.x + (childPos.x + matchWidth))/2,
           top: ((numDrawnIncomingConnections == 1) ? pos.y : pos.y + yOffFromIndex(0)) + yOff,
-          bottom: pos.y + yOffFromIndex(match.participants.length - 1) + yOff,
+          bottom: pos.y + yOffFromIndex(numSourceMatches - 1) + yOff,
           leftTicks: Array(numDrawnIncomingConnections).fill(0).map((_, i) => pos.y + yOffFromIndex(i) + yOff),
           rightTicks: [pos.y + yOff]
         };
         
         allConnectors.push(matchConnector);
+        
+        i++;
       }
     })
     
@@ -77,6 +90,7 @@
   }
 
   function handleHover(match: Match, participant: MatchParticipant) {
+    // TODO: search backwards
     highlighted = [participant]
     if (participant.data) {
       const addSourceToHighlighted = (p: MatchParticipant) => {
@@ -140,11 +154,15 @@
     bracket.allMatchesUpper.forEach(i => upperFinals = i.round > upperFinals.round ? i : upperFinals);
     matchIdsToPos[upperFinals.id] = {x: 0, y: 0}
 
-    let lowerFinals: Match | undefined;
+    let lowerFinalRoundMatches: Match[] = [];
     if (bracket.allMatchesLower) {
-      lowerFinals = bracket.allMatchesLower[0];
-      bracket.allMatchesLower.forEach(i => lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals);
-      matchIdsToPos[lowerFinals.id] = {x: 0, y: 0}
+      lowerFinalRoundMatches = [bracket.allMatchesLower[0]];
+      // lowerFinals = i.round > lowerFinals!.round ? i : lowerFinals
+      bracket.allMatchesLower.forEach(i => {
+        if (i.round > lowerFinalRoundMatches[0].round) lowerFinalRoundMatches = [i]
+        else if (i.round == lowerFinalRoundMatches[0].round) lowerFinalRoundMatches.push(i)
+      });
+      lowerFinalRoundMatches.forEach(i => matchIdsToPos[i.id] = {x: 0, y: 0})
     }
 
     document.addEventListener("mouseup", handleMouseup);
@@ -156,27 +174,35 @@
     connectorsUpper = [...connectorsUpper] // trigger a rerender now that connectors is populated
 
     if (bracket.allMatchesLower) {
-      connectorsLower = setChildPositions(lowerFinals!);
-      let {min: minLower, max: maxLower} = getMatchesMinMaxPos(bracket.allMatchesLower);
-      let {min: minUpperNew, max: maxUpperNew} = getMatchesMinMaxPos(bracket.allMatchesUpper);
-      let lowerBracketOffset = {x: minLower.x, y: minLower.y - maxUpperNew.y - matchHeight - 40};
-      offsetMatches(bracket.allMatchesLower, lowerBracketOffset);
-      offsetConnectors(connectorsLower, lowerBracketOffset);
-      connectorsLower = [...connectorsLower]
+      lowerFinalRoundMatches.forEach((finalRoundMatch, i) => {
+        let currentConnectorsLower = setChildPositions(finalRoundMatch!);
+        let {min: minLower, max: maxLower} = getMatchesMinMaxPos(getAllChildren(finalRoundMatch));
+        let {min: minUpperNew, max: maxUpperNew} = getMatchesMinMaxPos(i == 0 ? bracket.allMatchesUpper : getAllChildren(lowerFinalRoundMatches[i-1]));
+        let manualExtraGap = i == 0 ? 40 : 0; // Only for gap between upper and lower
+        let lowerBracketOffset = {x: minLower.x, y: minLower.y - maxUpperNew.y - matchHeight - manualExtraGap};
+        offsetMatches(getAllChildren(finalRoundMatch), lowerBracketOffset);
+        offsetConnectors(currentConnectorsLower, lowerBracketOffset);
+        allConnectorsLower = [...allConnectorsLower, ...currentConnectorsLower]
+      })
+
+      let meanYPosLowerFinalRoundMatches = lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].y).reduce((a,b) => a+b) / lowerFinalRoundMatches.length;
+      let maxXPosLowerFinalRoundMatches = Math.max(...lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].x));
 
       let grandFinalPos = matchIdsToPos[bracket.grandFinals.id];
-      grandFinalPos.y = (matchIdsToPos[upperFinals.id].y + matchIdsToPos[lowerFinals!.id].y) / 2;
-      grandFinalPos.x = Math.max(matchIdsToPos[upperFinals.id].x, matchIdsToPos[lowerFinals!.id].x) + matchWidth + gapX;
+      grandFinalPos.y = (matchIdsToPos[upperFinals.id].y + meanYPosLowerFinalRoundMatches) / 2;
+      grandFinalPos.x = Math.max(matchIdsToPos[upperFinals.id].x, maxXPosLowerFinalRoundMatches) + matchWidth + gapX;
+
+      let maxYPosLowerFinalRoundMatches = Math.max(...lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].y));
 
       grandFinalsConnector = {
         thickness: connectorThickness, 
         tickSize: gapX/2,
         x: grandFinalPos.x - gapX/2,
         top: matchIdsToPos[upperFinals.id].y + matchHeight/2,
-        bottom: matchIdsToPos[lowerFinals!.id].y + matchHeight/2,
+        bottom: maxYPosLowerFinalRoundMatches + matchHeight/2,
         leftTicks: [
           matchIdsToPos[upperFinals.id].y + matchHeight/2,
-          matchIdsToPos[lowerFinals!.id].y + matchHeight/2
+          ...lowerFinalRoundMatches.map(i => matchIdsToPos[i.id].y + matchHeight/2)
         ],
         rightTicks: [grandFinalPos.y + matchHeight/2]
       }
@@ -252,6 +278,11 @@
     })
   }
 
+  const logMatch = (m: Match) => {
+    console.log(`Match ${m.id+1}\nRound ${m.round}\nParticipants: ${m.participants.map(i => i.theoreticalSeed+1)}\nTo: ${m.results.map(i => (i.to?.id ?? -1000)+1)}\nCT: ${m.childrenTall}`)
+    console.log("Pos", matchIdsToPos[m.id])
+  }
+
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -261,7 +292,7 @@
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <!-- TODO: Make match-containter into ready-match, and give it only if the match has no dummy participants -->
-      <div on:click={() => startVoting(match)} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${matchIdsToPos[match.id].x}px; top: ${matchIdsToPos[match.id].y}px;`}>
+      <div on:click={() => {logMatch(match); startVoting(match)}} class="match-containter" style={`position: absolute; width: ${matchWidth}px; height: ${matchHeight}px; left: ${matchIdsToPos[match.id].x}px; top: ${matchIdsToPos[match.id].y}px;`}>
         <div bind:this={allMatchElements[i]} class="card">
           <!-- <div class="blob"></div> -->
           <!-- <div class="fake-blob"></div> -->
@@ -285,7 +316,7 @@
         </div>
       </div>
     {/each}
-    {#each [...connectorsUpper, ...connectorsLower, ...(grandFinalsConnector ? [grandFinalsConnector] : [])] as connector}
+    {#each [...connectorsUpper, ...allConnectorsLower, ...(grandFinalsConnector ? [grandFinalsConnector] : [])] as connector}
         <div style={`position: absolute; color: black; background-color: #abbaba; left: ${connector.x}px; top: ${connector.top}px; width: ${connector.thickness}px; border-radius: 100px; height: ${connector.bottom - connector.top + connector.thickness}px;`}>
         </div>
         {#if connector.leftTicks}

@@ -2,6 +2,10 @@ import { assets } from "$app/paths";
 import { MediaType, type MediaInfo, type Position } from "./typedef";
 
 type MatchGroupings = number[][];
+type RoundBlueprint = {
+    numParticipants: number, 
+    isHalfRound: boolean
+}
 
 export type MatchResult = {
 	//possibly a property indicating placement
@@ -101,7 +105,7 @@ export class Bracket {
     participantsPerMatch: number;
     allEntrants: Entrant[];
 
-    constructor(allEntrants: Entrant[], winnersPerMatch: number, participantsPerMatch: number, generateLowerBracket = false) {
+    constructor(allEntrants: Entrant[], winnersPerMatch: number, participantsPerMatch: number, generateLowerBracket = true) {
         this.allMatchesUpper = [];
         allEntrants.sort((a,b) => a.seed - b.seed);
         allEntrants.forEach((i,j) => i.seed = j)
@@ -141,30 +145,33 @@ export class Bracket {
         // - Lower Bracket -
         let allRoundsLower: Round[] | undefined;
         if (generateLowerBracket) {
+            let losersBlueprint = this.getLosersBlueprint(allEntrants.length * ((participantsPerMatch - winnersPerMatch) / participantsPerMatch));
+            
             // Create 1st round
-            let lower1stRound = this.getSingleRound(allRoundsUpper[0].loserSeeds);
+            let placeholders1stRound = losersBlueprint[0].numParticipants - allRoundsUpper[0].loserSeeds.length;
+            let lower1stRound = this.getSingleRound(allRoundsUpper[0].loserSeeds, {setNumPlaceholders: placeholders1stRound});
             allRoundsLower = [lower1stRound]
             lower1stRound.fedFrom.push(allRoundsUpper[0]);
-            
+            console.log('lower1stRound', lower1stRound);
+
             // Create subsequent rounds
             let currLowerRound = 0;
-            let roundsUntilHalfRound = 1;
-            do {
-                currLowerRound++;
-                let currRound = this.getSingleRound([...allRoundsLower[allRoundsLower.length - 1].winnerSeeds, ...(allRoundsUpper[currLowerRound]?.loserSeeds ?? [])])
-                currRound.fedFrom.push(allRoundsLower[allRoundsLower.length - 1], allRoundsUpper[currLowerRound]);
-                allRoundsLower.push(currRound);
-                
-                // Half rounds are a round consisting of only loser's bracket participants, and no new winner's bracket participants 
-                roundsUntilHalfRound--;
-                if (roundsUntilHalfRound == 0 && allRoundsLower[allRoundsLower.length - 1].winnerSeeds.length >= participantsPerMatch) {
-                    roundsUntilHalfRound = 1;
-                    currRound = this.getSingleRound(allRoundsLower[allRoundsLower.length - 1].winnerSeeds)
-                    currRound.fedFrom.push(allRoundsLower[allRoundsLower.length - 1]);
-                    allRoundsLower.push(currRound);
+            losersBlueprint.slice(1).forEach((roundBlueprint, j) => {
+                if (roundBlueprint.isHalfRound) {
+                    let currRound = this.getSingleRound(allRoundsLower![allRoundsLower!.length - 1].winnerSeeds)
+                    currRound.fedFrom.push(allRoundsLower![allRoundsLower!.length - 1]);
+                    allRoundsLower!.push(currRound);
                 }
-            } while (allRoundsUpper[currLowerRound+1] && allRoundsLower[allRoundsLower.length - 1].winnerSeeds.length + allRoundsUpper[currLowerRound+1].winnerSeeds.length >= participantsPerMatch);
-
+                else {
+                    currLowerRound++;
+                    let roundParticipants = [...allRoundsLower![allRoundsLower!.length - 1].winnerSeeds, ...(allRoundsUpper[currLowerRound]?.loserSeeds ?? [])];
+                    let requiredPlaceholders = roundBlueprint.numParticipants - roundParticipants.length;
+                    let currRound = this.getSingleRound(roundParticipants, {setNumPlaceholders: requiredPlaceholders})
+                    currRound.fedFrom.push(allRoundsLower![allRoundsLower!.length - 1], allRoundsUpper[currLowerRound]);
+                    allRoundsLower!.push(currRound);
+                }
+            })
+            
             // Set the round numbers for lower brackets
             allRoundsLower.forEach((i,j) => i.roundNum = j)
             // Set the round numbers for upper brackets based on lower brackets (accounts for half rounds)
@@ -177,19 +184,19 @@ export class Bracket {
             console.log("allRoundsLower match groups", allRoundsLower.map(i => i.matchGroups));
         }
         else {
-            // Setting roundNum is normally handelled by lower bracket generation, so if there is no lower bracket, handle it here
+            // Setting roundNum is normally handled by lower bracket generation, so if there is no lower bracket, handle it here
             allRoundsUpper.forEach((i,j) => i.roundNum = j)
         }
         
         // Create grand finals
-        let grandFinalRround: Round;
+        let grandFinalRound: Round;
         if (generateLowerBracket) {
             let grandFinalParticipantSeeds = [...allRoundsUpper[allRoundsUpper.length - 1].winnerSeeds, ...allRoundsLower![allRoundsLower!.length - 1].winnerSeeds];
-            grandFinalRround = this.getSingleRound(grandFinalParticipantSeeds, {participantsPerMatch: grandFinalParticipantSeeds.length, winnersPerMatch: 1});
-            grandFinalRround.fedFrom.push(allRoundsUpper[allRoundsUpper.length - 1], allRoundsLower![allRoundsLower!.length - 1]);
+            grandFinalRound = this.getSingleRound(grandFinalParticipantSeeds, {participantsPerMatch: grandFinalParticipantSeeds.length, winnersPerMatch: 1});
+            grandFinalRound.fedFrom.push(allRoundsUpper[allRoundsUpper.length - 1], allRoundsLower![allRoundsLower!.length - 1]);
         }
         else {
-            grandFinalRround = allRoundsUpper[allRoundsUpper.length - 1]
+            grandFinalRound = allRoundsUpper[allRoundsUpper.length - 1]
             allRoundsUpper = allRoundsUpper.slice(0, allRoundsUpper.length - 1)
         }
 
@@ -290,7 +297,7 @@ export class Bracket {
             this.allMatchesLower = this.allMatchesLower.filter(filterRedundant)
         }
 
-        this.grandFinals = generateMatchesFromRound(grandFinalRround)[0];
+        this.grandFinals = generateMatchesFromRound(grandFinalRound)[0];
     }
 
     private getSingleRound(
@@ -358,6 +365,47 @@ export class Bracket {
             winnerSeeds: winners,
             loserSeeds: losers,
         };
+    }
+
+    getLosersBlueprint(minFirstRoundParticipants: number): RoundBlueprint[] {
+        // shorthand for readability
+        let ppm = this.participantsPerMatch;
+        let wpm = this.winnersPerMatch;
+
+        // console.log(`Min 1st round: ${minFirstRoundParticipants}\nPPM: ${ppm}\nWPM: ${wpm}`)
+
+        let bp: RoundBlueprint[] = [];
+
+        let i = 0;
+
+        let nextRoundLosers = ppm - wpm;
+        let inWinners = ppm;
+        let fromWinners = inWinners * ((ppm - wpm) / ppm);
+        let totalLosers = nextRoundLosers * (ppm / wpm);
+        let fromLosers = totalLosers - fromWinners;
+        bp.push({ numParticipants: totalLosers, isHalfRound: false });
+        while (i < 30 && fromLosers < minFirstRoundParticipants) {
+            i++;
+            inWinners *= (ppm / wpm)
+            nextRoundLosers = fromLosers;
+            fromWinners = inWinners * ((ppm - wpm) / ppm);
+            totalLosers = nextRoundLosers * (ppm / wpm);
+            fromLosers = totalLosers - fromWinners;
+            
+            // console.log(`FW: ${fromWinners} \n TL: ${totalLosers}`)
+            if (fromWinners >= totalLosers) {
+                inWinners /= (ppm / wpm)
+                fromLosers = totalLosers;
+                bp.push({ numParticipants: totalLosers, isHalfRound: true });
+            }
+            else {
+                bp.push({ numParticipants: totalLosers, isHalfRound: false });
+            }
+        }
+        bp[bp.length - 1].isHalfRound = false; // This is technically irrelevant, but is more correct for notation
+
+        console.log("Loser's Blueprint", bp)
+        return bp.reverse();
     }
 
     get allMatches() {
