@@ -384,7 +384,7 @@ export class Bracket {
         let totalLosers = nextRoundLosers * (ppm / wpm);
         let fromLosers = totalLosers - fromWinners;
         bp.push({ numParticipants: totalLosers, isHalfRound: false });
-        while (i < 30 && fromLosers < minFirstRoundParticipants) {
+        while (i < 50 && fromLosers < minFirstRoundParticipants) {
             i++;
             inWinners *= (ppm / wpm)
             nextRoundLosers = fromLosers;

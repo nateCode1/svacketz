@@ -5,7 +5,7 @@
 	import MediaPlayer from "./Media/MediaPlayer.svelte";
 	import Overlay from "./Overlay.svelte";
 
-    export let onCompleted: (entrants: Entrant[]) => void;
+    export let onSetupCompleted: (bracket: Bracket) => void;
 
     let mediaManager: MediaPlayer;
     let mediaPreviewVisible = false;
@@ -77,6 +77,10 @@
         textEditorVisible = true;
         textEditorFor = entrant;
     }
+
+    function setupDone() {
+        onSetupCompleted(new Bracket(entrantList, winnersPerMatch, participantsPerMatch, isDoubleElimination))
+    }
 </script>
 
 <div style="background-color: #333; padding: 10px; width: 90%; max-width: 800px;">
@@ -139,7 +143,7 @@
         </div>
     {/if}
 
-    <button on:click={() => onCompleted(entrantList)}>Done</button>
+    <button on:click={setupDone}>Done</button>
 
     <Overlay bind:visible={textEditorVisible}>
         {#if textEditorFor}

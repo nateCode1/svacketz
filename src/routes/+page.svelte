@@ -156,14 +156,14 @@
     if (bracket.allMatchesLower) bracket.allMatchesLower = [...bracket.allMatchesLower] 
   }
 
-  function endSetup(entrantList: Entrant[]) {
+  function endSetup(createdBracket: Bracket) {
     setupScreenVisible = false;
-    bracket = new Bracket(entrantList, 1, 3);
+    bracket = createdBracket;
   }
 </script>
 
 <Overlay bind:visible={setupScreenVisible} allowClose={false}>
-  <BracketSetup onCompleted={endSetup} />
+  <BracketSetup onSetupCompleted={endSetup} />
 </Overlay>
 
 {#if bracket && bracket.allMatches.every(i => i.resolved)}
