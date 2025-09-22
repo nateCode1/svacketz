@@ -72,6 +72,11 @@
             setTimeout(() => mediaManager.preview(entrant.media!), 100);
         }
     }
+    
+    function remove(entrant: Entrant) {
+        entrantList.splice(entrantList.indexOf(entrant), 1)
+        entrantList = [...entrantList]
+    }
 
     function editText(entrant: Entrant) {
         textEditorVisible = true;
@@ -117,6 +122,7 @@
                             {/each}
                         </select>
                         <button on:click={() => preview(entrant)}>Preview</button>
+                        <button on:click={() => remove(entrant)}>Remove</button>
                     </div>
                 {/each}
                 <div style="height: 40px;"></div>
