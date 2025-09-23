@@ -13,6 +13,9 @@
     let textEditorVisible = false;
     let textEditorFor: Entrant | undefined;
 
+    let hiddenDownloadLink: HTMLAnchorElement;
+    let hiddenFileInput: HTMLInputElement;
+
     let selectedTab = 0;
     let tabs = ["Participant Setup", "Bracket Setup"];
 
@@ -64,6 +67,26 @@
         if (newIndex < 0 || newIndex >= entrantList.length) return entrantList;
 
         [entrantList[index], entrantList[newIndex]] = [entrantList[newIndex], entrantList[index]];
+    }
+
+    function downloadEntrantList() {
+        hiddenDownloadLink.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(entrantList)));
+        hiddenDownloadLink.setAttribute('download', "participants.svacketz");
+
+        hiddenDownloadLink.click();
+    }
+
+    function uploadEntrantList() {
+        let onReaderLoad = (event: any) => {
+            entrantList = JSON.parse(event.target.result);
+        }
+
+        hiddenFileInput.onchange = () => {
+            var reader = new FileReader();
+            reader.onload = onReaderLoad;
+            if (hiddenFileInput.files) reader.readAsText(hiddenFileInput.files[0]);
+        }
+        hiddenFileInput.click();
     }
 
     function preview(entrant: Entrant) {
@@ -149,7 +172,11 @@
         </div>
     {/if}
 
-    <button on:click={setupDone}>Done</button>
+    <div style="display: flex">
+        <button on:click={setupDone}>Done</button>
+        <button on:click={downloadEntrantList}>Download Current Entrant List</button>
+        <button on:click={uploadEntrantList}>Upload Entrant List</button>
+    </div>
 
     <Overlay bind:visible={textEditorVisible}>
         {#if textEditorFor}
@@ -178,6 +205,9 @@
             />
         </div>
     </Overlay>
+
+    <a style="display: none;" bind:this={hiddenDownloadLink}></a>
+    <input type="file" accept=".svacketz" style="display: none;" bind:this={hiddenFileInput} />
 </div>
 
 <style>
