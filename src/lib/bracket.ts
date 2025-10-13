@@ -71,6 +71,15 @@ export class Match {
 		this.results = results;
 	}
 
+    public resolve(matchPlacment: Entrant[]) {
+        this.resolved = true;
+        this.results.forEach((i,j) => {
+            i.data = matchPlacment[j];
+            if (i.toParticipant) i.toParticipant.data = matchPlacment[j];
+            else matchPlacment[j].exitedAs = this.participants[j].theoreticalSeed;
+        })
+    }
+
     get childrenTall() {
         if (this.childrenTallCache) return this.childrenTallCache;
         let drawnConnections = this.participants.filter(i => i.fromResult?.draw);

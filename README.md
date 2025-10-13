@@ -38,7 +38,7 @@ The following pseudocode describes an algorithmic way to make these assignments:
 
   Participant and Match are both assumed to be classes, their implementation is omitted because it's not the focus here. Similarly the details of the Assign function aren't included, as they aren't critical to understand whats going on. Minimal requirements for each class are listed below:
   - Participant must have some identifying information for the participant, and optionally their seed.
-  - Match must contain a list of participants, and later on will require the ability to point to other matches. It must implement the Assign method, which takes a Participant as an argument, and adds the participant to its own list of participants for this particular match.
+  - Match must contain a list of Participants, and later on will require the ability to point to other matches. It must implement the Assign method, which takes a Participant as an argument, and adds the participant to its own list of Participants for this particular match.
 
   % is the modulo operator, `a % b` returns the remainder of `a / b`.
 
@@ -191,7 +191,7 @@ This covers the case of seeding a single round of matches with n participants an
 
 Most of the procedures for single round non-ideal seeding match those for the ideal case. For our previous methods to apply, we need a number of participants that is divisible by the number of participants per match (denoted as n).
 
-To accommodate this, some matches will be missing one or more participants. In the case of a bracket with 2 participants per match this is commonly referred to as a BYE round. Going forward BYE will refer to a dummy participant which doesn't actually participant, but is a placeholder for within the bracket.
+To accommodate this, some matches will be missing one or more participants. In the case of a bracket with 2 participants per match this is commonly referred to as a BYE round. Going forward BYE will refer to a dummy participant which doesn't actually participate, but is a placeholder for within the bracket.
 
 Lets look at a 2 participant per match example to begin. Suppose we have participants {1,2,3,4,5}. For our methods to work we will need the number of participants to be divisible by 2, which 5 is not. This constraint can be formalized as:
 

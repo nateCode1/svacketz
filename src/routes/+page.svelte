@@ -144,16 +144,11 @@
     return roundTitles[roundOf] ?? ("Round of " + roundOf)
   }
 
-  function resolveMatch(match: Match, matchPlacment: Entrant[]) {
-    match.resolved = true;
-    match.results.forEach((i,j) => {
-      i.data = matchPlacment[j];
-      if (i.toParticipant) i.toParticipant.data = matchPlacment[j];
-      else matchPlacment[j].exitedAs = match.participants[j].theoreticalSeed;
-    })
+  function resolveMatch(match: Match, matchPlacement: Entrant[]) {
+    match.resolve(matchPlacement)
 
     bracket.allMatchesUpper = [...bracket.allMatchesUpper]
-    if (bracket.allMatchesLower) bracket.allMatchesLower = [...bracket.allMatchesLower] 
+      if (bracket.allMatchesLower) bracket.allMatchesLower = [...bracket.allMatchesLower] 
   }
 
   function endSetup(createdBracket: Bracket) {

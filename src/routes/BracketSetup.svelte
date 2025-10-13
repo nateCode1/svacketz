@@ -78,7 +78,7 @@
 
     function uploadEntrantList() {
         let onReaderLoad = (event: any) => {
-            entrantList = JSON.parse(event.target.result);
+            entrantList = JSON.parse(event.target!.result);
         }
 
         hiddenFileInput.onchange = () => {
