@@ -6,8 +6,9 @@
   import DraggableEntrantList from './DraggableEntrantList.svelte';
   
   export let match: Match | null = null;
-  export let overlayVisible = false;
+  export let winnersPerMatch: number | null = null;
   export let resolveMatch: (match: Match, placements: Entrant[]) => void;
+  export let overlayVisible = false;
   export let repeatPreviews = false;
   export let maxPreviewLength = 5;
 
@@ -98,7 +99,7 @@
         {/each}
       </div> -->
 
-      <DraggableEntrantList sortedEntrants={sortedEntrantList}/>
+      <DraggableEntrantList numWinners={winnersPerMatch} sortedEntrants={sortedEntrantList}/>
     {/if}
     
     <div style="margin-top: 10px;">

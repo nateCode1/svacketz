@@ -14,34 +14,40 @@
     let textEditorFor: Entrant | undefined;
 
     let hiddenDownloadLink: HTMLAnchorElement;
-    let hiddenFileInput: HTMLInputElement;
+    let hiddenSvacketzFileInput: HTMLInputElement;
+    let hiddenNormalFileInput: HTMLInputElement;
 
     let selectedTab = 0;
-    let tabs = ["Participant Setup", "Bracket Setup"];
+    let tabs = ["Participant Setup", "Bracket Setup", "Media Setup"];
 
     let entrantList: Entrant[] = [
         new Entrant("JS Jumpscare", 1, false, MediaType.IMAGE, "https://m.media-amazon.com/images/I/61irQrNjgnL._UF894,1000_QL80_.jpg"),
         new Entrant("A Text", 2, false, MediaType.TEXT, "Wow"),
         new Entrant("A three", 3, false, MediaType.TEXT, "Three text three text!"),
-        new Entrant("44444", 4, false, MediaType.TEXT, "# Yes it is true"),
-        new Entrant("55555", 5, false, MediaType.TEXT, "# Yes it is true"),
-        new Entrant("66666", 6, false, MediaType.TEXT, "# Yes it is true"),
-        new Entrant("77777", 7, false, MediaType.TEXT, "# Yes it is true"),
-        new Entrant("88888", 8, false, MediaType.TEXT, "# Yes it is true"),
-        new Entrant("99999", 9, false, MediaType.TEXT, "# Yes it is true"),
+        new Entrant("44444", 4, false, MediaType.TEXT, "# Yes it is 4"),
+        new Entrant("55555", 5, false, MediaType.TEXT, "# Yes it is 5"),
+        new Entrant("66666", 6, false, MediaType.TEXT, "# Yes it is six"),
+        new Entrant("77777", 7, false, MediaType.TEXT, "# Yes it is 7"),
+        new Entrant("88888", 8, false, MediaType.TEXT, "# Yes it is 8"),
+        new Entrant("99999", 9, false, MediaType.TEXT, "# Yes it is 9"),
     ];
 
     let participantsPerMatch = 2;
     let winnersPerMatch = 1;
     let isDoubleElimination = false;
 
-    let errorMessages: string[] = [];
+    // TODO: make the following 3 variables do something
+    let maxPreviewLength = 5;
+    let randomizeVideoStart = true;
+    let multiPreview = false;
 
-    function errorCheck() {
-        errorMessages = [];
-        if (participantsPerMatch < 2) errorMessages.push("Can't have fewer than 2 participants per match.");
-        if (winnersPerMatch * 2 > participantsPerMatch) errorMessages.push("Can't have winners per match be over half of participants per match.");
-        else if (winnersPerMatch < 1)  errorMessages.push("Can't have fewer than 1 winners per match.");
+    let errorMessagesBracketSetup: string[] = [];
+
+    function errorCheckBracketSetup() {
+        errorMessagesBracketSetup = [];
+        if (participantsPerMatch < 2) errorMessagesBracketSetup.push("Can't have fewer than 2 participants per match.");
+        if (winnersPerMatch * 2 > participantsPerMatch) errorMessagesBracketSetup.push("Can't have winners per match be over half of participants per match.");
+        else if (winnersPerMatch < 1)  errorMessagesBracketSetup.push("Can't have fewer than 1 winners per match.");
     }
 
     function addNew() {
@@ -81,12 +87,56 @@
             entrantList = JSON.parse(event.target!.result);
         }
 
-        hiddenFileInput.onchange = () => {
+        hiddenSvacketzFileInput.onchange = () => {
             var reader = new FileReader();
             reader.onload = onReaderLoad;
-            if (hiddenFileInput.files) reader.readAsText(hiddenFileInput.files[0]);
+            if (hiddenSvacketzFileInput.files) reader.readAsText(hiddenSvacketzFileInput.files[0]);
         }
-        hiddenFileInput.click();
+        hiddenSvacketzFileInput.click();
+    }
+
+    function uploadEntrantsFromFile() {
+        // TODO: add support for video uploads
+        hiddenNormalFileInput.onchange = async (event) => {
+            const files = event?.target?.files;
+            if (!files || !files.length) return;
+
+            for (const file of files) {
+                let entrant = new Entrant(
+                    file.name.split(".")[0],
+                    entrantList.length + 1,
+                    false,
+                    MediaType.NONE,
+                    ""
+                )
+                
+                console.log(`Filename: ${file.name}`);
+                console.log(`Type: ${file.type}`);
+                
+                // Text
+                if (file.type === "text/plain" || file.name.endsWith(".md")) {
+                    const content = await file.text();
+
+                    entrant.media.mediaType = MediaType.TEXT;
+                    entrant.media.mediaSrc = content;
+                }
+                // Image
+                else if (file.type.startsWith("image/")) {
+                    const imageUrl = URL.createObjectURL(file);
+
+                    entrant.media.mediaType = MediaType.IMAGE;
+                    entrant.media.mediaSrc = imageUrl;
+                }
+
+                entrantList.push(entrant);
+            }
+            
+            entrantList = [...entrantList]
+            sortEntrants()
+            event.target.value = '';
+        }
+
+        hiddenNormalFileInput.click();
     }
 
     function preview(entrant: Entrant) {
@@ -116,7 +166,7 @@
         {#each tabs as tab, i}
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div on:click={() => {selectedTab = i}} class={`tab ${i == selectedTab ? "tab-selected" : ""}`}>
+            <div style="padding: 0 20px;" on:click={() => {selectedTab = i}} class={`tab ${i == selectedTab ? "tab-selected" : ""}`}>
                 <p>{tab}</p>
             </div>
         {/each}
@@ -156,19 +206,34 @@
         <div class="tab-content">
             <div class="input-block">
                 <p>Participants per match:</p>
-                <input type="number" style="width: 50px;" on:change={errorCheck} bind:value={participantsPerMatch} min={2}/>
+                <input type="number" style="width: 50px;" on:change={errorCheckBracketSetup} bind:value={participantsPerMatch} min={2}/>
             </div>
             <div class="input-block">
                 <p>Winners per match:</p>
-                <input type="number" style="width: 50px;" on:change={errorCheck} bind:value={winnersPerMatch} min={1}/>
+                <input type="number" style="width: 50px;" on:change={errorCheckBracketSetup} bind:value={winnersPerMatch} min={1}/>
             </div>
             <div class="input-block">
                 <p>Double elimination?:</p>
-                <input type="checkbox" style="width: 15px;" bind:value={isDoubleElimination}/>
+                <input type="checkbox" style="width: 15px;" bind:checked={isDoubleElimination}/>
             </div>
-            {#each errorMessages as error}
+            {#each errorMessagesBracketSetup as error}
                 <p style="color: red; margin: 2px 0;">{error}</p>
             {/each}
+        </div>
+    {:else if selectedTab == 2}
+        <div class="tab-content">
+            <div class="input-block">
+                <p>Multi-Preview (all previews shown simeltaneously):</p>
+                <input type="checkbox" style="width: 15px;" bind:checked={multiPreview}/>
+            </div>
+            <div class="input-block {multiPreview ? "input-disabled" : ""}">
+                <p>Preview Length:</p>
+                <input type="number" style="width: 50px;" bind:value={maxPreviewLength} min={1}/>
+            </div>
+            <div class="input-block {multiPreview ? "input-disabled" : ""}">
+                <p>Randomize Video Start Times:</p>
+                <input type="checkbox" style="width: 15px;" bind:checked={randomizeVideoStart}/>
+            </div>
         </div>
     {/if}
 
@@ -176,6 +241,7 @@
         <button on:click={setupDone}>Done</button>
         <button on:click={downloadEntrantList}>Download Current Entrant List</button>
         <button on:click={uploadEntrantList}>Upload Entrant List</button>
+        <button on:click={uploadEntrantsFromFile}>Upload Entrants From File</button>
     </div>
 
     <Overlay bind:visible={textEditorVisible}>
@@ -207,7 +273,8 @@
     </Overlay>
 
     <a style="display: none;" bind:this={hiddenDownloadLink}></a>
-    <input type="file" accept=".svacketz" style="display: none;" bind:this={hiddenFileInput} />
+    <input type="file" accept=".svacketz" style="display: none;" bind:this={hiddenSvacketzFileInput} />
+    <input type="file" accept=".md,.txt,.png,.jpg,.svg" style="display: none;" multiple bind:this={hiddenNormalFileInput} />
 </div>
 
 <style>
@@ -262,5 +329,10 @@
         gap: 10px;
         height: 30px;
         align-items: center;
+    }
+
+    .input-disabled {
+        opacity: 50%;
+        pointer-events: none;
     }
 </style>

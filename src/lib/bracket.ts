@@ -121,8 +121,8 @@ export class Bracket {
 
         // Pad the length of allEntrants with BYEs
         let ratio = participantsPerMatch / winnersPerMatch;
-        let log = Math.log(allEntrants.length) / Math.log(ratio);
-        let requiredBYEs = Math.round(Math.pow(ratio, log + 1 - (log % 1)) - allEntrants.length);
+        let log = Math.log(allEntrants.length / participantsPerMatch) / Math.log(ratio);
+        let requiredBYEs = participantsPerMatch * Math.pow(ratio, Math.ceil(log)) - allEntrants.length;
         if (Math.log(allEntrants.length / participantsPerMatch) / Math.log(ratio) % 1 == 0) requiredBYEs = 0;
 
         this.allEntrants = allEntrants;
@@ -137,7 +137,9 @@ export class Bracket {
         console.log("allEntrantSeeds", allEntrantSeeds)
         console.log("requiredBYEs", requiredBYEs)
 
-        let allRoundsUpper = [this.getSingleRound(allEntrantSeeds, {setNumPlaceholders: requiredBYEs})]
+        
+        let requiredBYEsParameter = participantsPerMatch % winnersPerMatch == 0 ? requiredBYEs : undefined // TODO: this is a temporary solution
+        let allRoundsUpper = [this.getSingleRound(allEntrantSeeds, {setNumPlaceholders: requiredBYEsParameter})]
 
         console.log("allRounds[allRounds.length - 1].matches", allRoundsUpper[allRoundsUpper.length - 1].matchGroups)
 
@@ -324,6 +326,8 @@ export class Bracket {
         let participantsPerMatch = settings?.participantsPerMatch ?? this.participantsPerMatch;
         let winnersPerMatch = settings?.winnersPerMatch ?? this.winnersPerMatch;
 
+        console.log("allowPadding", allowPadding)
+
         // Assertions
         if (!allowPadding && (participantSeeds.length % participantsPerMatch != 0)) throw new Error('Invalid number of participants passed to getSingleRound when allowPadding=false');
         
@@ -337,6 +341,12 @@ export class Bracket {
             if (setNumPlaceholders) numPlaceholders = setNumPlaceholders;
             else numPlaceholders = participantsPerMatch - (numRealParticipants % participantsPerMatch);
             let placeholders = Array(numPlaceholders).fill(-1);
+
+            console.log(setNumPlaceholders)
+            console.log(participantsPerMatch)
+            console.log(numRealParticipants)
+            console.log(numRealParticipants % participantsPerMatch)
+            console.log(numPlaceholders)
 
             participantSeeds = [...participantSeeds, ...placeholders];
         }

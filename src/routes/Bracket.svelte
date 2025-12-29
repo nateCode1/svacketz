@@ -62,7 +62,10 @@
         let numDrawnIncomingConnections = match.participants.filter(i => i.fromResult?.draw).length;
 
         let childrenTall = match.childrenTall;
-        let numSourceMatches = match.participants.filter(i => i.from && i.from.results[0].to == match).length;
+        let numSourceMatches = match.participants.filter(i => i.fromResult && i.fromResult.draw && i.fromResult.to == match).length; 
+        console.log("match.participants", match.participants)
+        console.log("numSourceMatches", numSourceMatches)
+        console.log("set", new Set(match.participants.filter(i => i.from && i.from.results[0].draw && i.from.results[0].to == match)))
         const yOffFromIndex = (i: number) => (numDrawnIncomingConnections == 1) ? gapY : (childrenTall/numSourceMatches) * (matchHeight + gapY) * (i - 0.5 * (numSourceMatches - 1))
 
         childPos.y = pos.y + yOffFromIndex(i);

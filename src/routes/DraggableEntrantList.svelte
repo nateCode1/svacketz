@@ -6,6 +6,9 @@
 	// https://svelte.dev/repl/915db3b3ed704fddb7ddfb64bcbc2624?version=3.31.1
 	
     export let sortedEntrants: Entrant[];
+    export let numWinners: number | null = null;
+
+    let winnerMarkerOffset = 0;
 
     let mouseXCoordinate: number = 0; // pointer y coordinate within client
     let distanceLeftGrabbedVsPointer: number = 0;
@@ -49,9 +52,20 @@
         }
     }
 
+    $: {
+        if (numWinners && elements.length > numWinners && !elements.includes(undefined)) {
+            winnerMarkerOffset = (elements[numWinners - 1].getBoundingClientRect().right + elements[numWinners].getBoundingClientRect().left) / 2 - container.getBoundingClientRect().x
+        }
+    }
+
 </script>
 
 <div class="container" bind:this={container}>
+    {#if numWinners}
+        <p class="winner-loser-arrow" style="left: {winnerMarkerOffset}px; clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 20% 100%, 0% 50%); top: 0; transform: translate(-50%, -50%);padding: 0px 2px 0 5px;">Win</p>
+        <p class="winner-loser-arrow" style="left: {winnerMarkerOffset}px; clip-path: polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%); bottom: 0; transform: translate(-50%, 50%);padding: 0px 5px 0 2px;">Lose</p>
+    {/if}
+    
     {#if mouseXCoordinate}
         <div
             bind:this={ghost}
@@ -87,18 +101,12 @@
                 hoveredItemIndex = null; // prevents instant swap
             }}>
             {item.name}
+            <div style="position: absolute; right: 0; top: 0; background-color: #666; border-bottom: 1px solid #999; border-left: 1px solid #999; display: flex; justify-content: center; align-items: center; font-size: 0.85rem;">
+                {index+1}<sup>{["st", "nd", "rd"][index] ?? "th"}</sup>
+            </div>
         </div>
     {/each}
 </div>
-
-<!-- {draggingItemIndex}
-{hoveredItemIndex}
-<br />
-distanceTopGrabbedVsPointer:
-{distanceTopGrabbedVsPointer}
-<br />
-{showGhost}
-<br /> -->
 
 <!-- {JSON.stringify(list)} -->
 
@@ -119,7 +127,10 @@ distanceTopGrabbedVsPointer:
         padding: 10px;
         cursor: grab;
         background-color: #333;
-        box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.75);
+        /* box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.75); */
+        border: 1px solid #999;
+        position: relative;
+        border-radius: 2px;
     }
 
     .ghost {
@@ -133,5 +144,18 @@ distanceTopGrabbedVsPointer:
 
     .invisible {
         opacity: 0;
+    }
+
+    .winner-loser-arrow {
+        position: absolute;
+        margin: 0;
+        background-color: #888;
+        color: #222;
+        font-weight: bold;
+        font-size: 0.75em;
+        left: 50%;
+        min-width: 33px;
+        text-align: center;
+        z-index: 5;
     }
 </style>

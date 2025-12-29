@@ -20,6 +20,7 @@
 		if (endPreviewTimeout)
             clearTimeout(endPreviewTimeout);
         ready = false;
+        source = "";
 	}
 
     export function preview(text: string) {
@@ -35,9 +36,9 @@
 
 {#if ready}
     <div class="text-player-container">
-        <div>
+        {#key source}
             <SvelteMarkdown {source} />
-        </div>
+        {/key}
     </div>
 {/if}
 
