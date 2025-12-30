@@ -2,15 +2,16 @@
   import { onMount } from "svelte";
 	import MediaPlayer from "./Media/MediaPlayer.svelte";
 	import { Match, Entrant, type MatchParticipant, type MatchResult } from "$lib/bracket";
-	import { MediaType } from "$lib/typedef";
+	import { MediaType, type MediaConfig } from "$lib/typedef";
   import DraggableEntrantList from './DraggableEntrantList.svelte';
+	import MultiPreview from "./Media/MultiPreview.svelte";
   
   export let match: Match | null = null;
   export let winnersPerMatch: number | null = null;
   export let resolveMatch: (match: Match, placements: Entrant[]) => void;
   export let overlayVisible = false;
-  export let repeatPreviews = false;
-  export let maxPreviewLength = 5;
+  
+  export let mediaConfig: MediaConfig = {};
 
   export let close = () => {
     mediaManager.stop();
@@ -42,6 +43,16 @@
   let mediaManager: MediaPlayer;
 
   let sortedEntrantList: Entrant[];
+
+  let repeatPreviews = false;
+  let maxPreviewLength = 5;
+  let multiPreview = false;
+
+  $: {
+    repeatPreviews = mediaConfig.repeatPreviews ?? repeatPreviews
+    maxPreviewLength = mediaConfig.maxPreviewLength ?? maxPreviewLength
+    multiPreview = mediaConfig.multiPreview ?? multiPreview
+  }
 
   onMount(() => mediaManager.init())
 
@@ -83,7 +94,7 @@
 
   <div class="content" on:click|stopPropagation>
     {#if match}
-      <div style="display: flex; justify-content: space-between;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
         <h2 style="margin: 0;">Match {match.id}</h2>
         <p style="margin: 0;">Round: {match.round}</p>
       </div>
@@ -101,9 +112,13 @@
 
       <DraggableEntrantList numWinners={winnersPerMatch} sortedEntrants={sortedEntrantList}/>
     {/if}
-    
-    <div style="margin-top: 10px;">
-      <h2 style="color: #ccc; margin-bottom: 5px;">Now Previewing: {match?.participants[focusedParticipantIndex]?.data?.name ?? ""}</h2>
+      
+    <div style="display: {mediaConfig.multiPreview ? "inherit" : "none"};">
+      <MultiPreview entrantList={match?.participants.map(i => i.data)}/>
+    </div>
+
+    <div style="margin-top: 10px; display: {mediaConfig.multiPreview ? "none" : "inherit"};">
+      <h2 style="margin-bottom: 5px; text-align: center;"><span style="font-size: 1em; color: #999;">Now Previewing:</span> <span style="font-size: 1.5em; color: #fff;">{match?.participants[focusedParticipantIndex]?.data?.name ?? ""}</span></h2>
       <MediaPlayer
         maxPreviewLength={maxPreviewLength} 
         previewDoneCallback={previewNext} 

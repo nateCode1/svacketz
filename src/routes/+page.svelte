@@ -1,6 +1,6 @@
 <script lang="ts">
 	import MatchCard from "./MatchCard.svelte";
-  import { MediaType } from '$lib/typedef'
+  import { MediaType, type MediaConfig } from '$lib/typedef'
   import { Match, Entrant, Bracket, type MatchParticipant } from "$lib/bracket";
 	import BracketUI from './Bracket.svelte';
 	import VotingScreen from "./VotingScreen.svelte";
@@ -36,6 +36,8 @@
 
   let setupScreenVisible: boolean = true;
   let resultsVisible: boolean = true;
+
+  let mediaConfig: MediaConfig | null = null;
 
   // const pPerMatch = 2;
 
@@ -151,9 +153,11 @@
       if (bracket.allMatchesLower) bracket.allMatchesLower = [...bracket.allMatchesLower] 
   }
 
-  function endSetup(createdBracket: Bracket) {
+  function endSetup(createdBracket: Bracket, createdMediaConfig: MediaConfig) {
     setupScreenVisible = false;
     bracket = createdBracket;
+
+    mediaConfig = createdMediaConfig;
   }
 </script>
 
@@ -177,7 +181,7 @@
 
 {#if bracket}
   <div style="display: flex; justify-content: space-between; width: 100%; gap: 8px; height: 95vh;">
-    <VotingScreen bind:this={votingScreen} winnersPerMatch={bracket.winnersPerMatch} resolveMatch={resolveMatch}/>
+    <VotingScreen bind:this={votingScreen} winnersPerMatch={bracket.winnersPerMatch} resolveMatch={resolveMatch} mediaConfig={mediaConfig}/>
     <BracketUI startVoting={votingScreen?.startVoting} bracket={bracket}/>
 
     <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">

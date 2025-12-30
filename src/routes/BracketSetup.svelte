@@ -1,11 +1,14 @@
 <script lang="ts">
     import { Bracket, Entrant } from "$lib/bracket";
-	import { MediaType } from "$lib/typedef";
+	import { MediaType, type MediaConfig } from "$lib/typedef";
 	import SvelteMarkdown from "svelte-markdown";
-	import MediaPlayer from "./Media/MediaPlayer.svelte";
+	import MediaPlayer, { multiPreviewSupportedMediaTypes } from "./Media/MediaPlayer.svelte";
 	import Overlay from "./Overlay.svelte";
 
-    export let onSetupCompleted: (bracket: Bracket) => void;
+    export let onSetupCompleted: (
+        bracket: Bracket, 
+        mediaConfig: MediaConfig
+    ) => void;
 
     let mediaManager: MediaPlayer;
     let mediaPreviewVisible = false;
@@ -38,7 +41,7 @@
 
     // TODO: make the following 3 variables do something
     let maxPreviewLength = 5;
-    let randomizeVideoStart = true;
+    let repeatPreviews = true;
     let multiPreview = false;
 
     let errorMessagesBracketSetup: string[] = [];
@@ -157,7 +160,10 @@
     }
 
     function setupDone() {
-        onSetupCompleted(new Bracket(entrantList, winnersPerMatch, participantsPerMatch, isDoubleElimination))
+        onSetupCompleted(
+            new Bracket(entrantList, winnersPerMatch, participantsPerMatch, isDoubleElimination),
+            {maxPreviewLength: maxPreviewLength, repeatPreviews: repeatPreviews, multiPreview: multiPreview}
+        )
     }
 </script>
 
@@ -222,17 +228,24 @@
         </div>
     {:else if selectedTab == 2}
         <div class="tab-content">
-            <div class="input-block">
+            <div class="input-block" style="margin-bottom: 0;">
                 <p>Multi-Preview (all previews shown simeltaneously):</p>
                 <input type="checkbox" style="width: 15px;" bind:checked={multiPreview}/>
             </div>
+            <div style="font-size: 0.7em; margin: 0 0 15px 0;">
+                <p style="color: #bbb; margin: 0;">Multi-preview mode only supports text and images, all other media types will be ignored.</p>
+                {#if entrantList.some(i => i.media && !multiPreviewSupportedMediaTypes.includes(i.media.mediaType) && multiPreview)}
+                    <p style="color: #edc213; margin: 0;">Warning: your list of entrants currently includes unsupported media types.</p>
+                {/if}
+            </div>
+
             <div class="input-block {multiPreview ? "input-disabled" : ""}">
                 <p>Preview Length:</p>
                 <input type="number" style="width: 50px;" bind:value={maxPreviewLength} min={1}/>
             </div>
             <div class="input-block {multiPreview ? "input-disabled" : ""}">
-                <p>Randomize Video Start Times:</p>
-                <input type="checkbox" style="width: 15px;" bind:checked={randomizeVideoStart}/>
+                <p>Repeat Previews:</p>
+                <input type="checkbox" style="width: 15px;" bind:checked={repeatPreviews}/>
             </div>
         </div>
     {/if}
@@ -329,6 +342,7 @@
         gap: 10px;
         height: 30px;
         align-items: center;
+        margin-bottom: 5px;
     }
 
     .input-disabled {

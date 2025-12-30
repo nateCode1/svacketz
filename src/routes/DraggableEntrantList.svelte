@@ -101,7 +101,7 @@
                 hoveredItemIndex = null; // prevents instant swap
             }}>
             {item.name}
-            <div style="position: absolute; right: 0; top: 0; background-color: #666; border-bottom: 1px solid #999; border-left: 1px solid #999; display: flex; justify-content: center; align-items: center; font-size: 0.85rem;">
+            <div style="position: absolute; right: 0; top: 0; background-color: #666; border-bottom: 1px solid #999; border-left: 1px solid #999; display: flex; justify-content: center; align-items: center; font-size: 0.85rem; padding-left: 1px;">
                 {index+1}<sup>{["st", "nd", "rd"][index] ?? "th"}</sup>
             </div>
         </div>

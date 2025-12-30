@@ -5,7 +5,7 @@
 
     export let maxPreviewLength = 5;
     export let ready = false;
-    let source = "";
+    let textContent = "";
 
     let endPreviewTimeout: NodeJS.Timeout | null = null;
 
@@ -20,11 +20,11 @@
 		if (endPreviewTimeout)
             clearTimeout(endPreviewTimeout);
         ready = false;
-        source = "";
+        textContent = "";
 	}
 
     export function preview(text: string) {
-        source = text;
+        textContent = text;
         ready = true;
         endPreviewTimeout = setTimeout(endCurrentPreview, maxPreviewLength * 1000)
     }
@@ -36,8 +36,8 @@
 
 {#if ready}
     <div class="text-player-container">
-        {#key source}
-            <SvelteMarkdown {source} />
+        {#key textContent}
+            <SvelteMarkdown source={textContent} />
         {/key}
     </div>
 {/if}

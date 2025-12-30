@@ -1,5 +1,9 @@
 <!-- This component is more or less one big multiplexer -->
 
+<script context="module" lang="ts">
+    export const multiPreviewSupportedMediaTypes = [MediaType.IMAGE, MediaType.TEXT, MediaType.NONE];
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { MediaType, type MediaInfo } from '$lib/typedef';

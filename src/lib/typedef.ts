@@ -13,7 +13,7 @@ export type Connector = {
 	rightTicks?: number[];
 };
 
-
+// -- MEDIA --
 export enum MediaType {
 	NONE,
 	YOUTUBE,
@@ -26,3 +26,10 @@ export type MediaInfo = {
 	mediaType: MediaType;
 	mediaSrc: string;
 }
+
+export type MediaConfig = {
+	maxPreviewLength?: number, 
+	repeatPreviews?: boolean, 
+	multiPreview?: boolean
+}
+
