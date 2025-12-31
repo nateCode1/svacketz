@@ -33,7 +33,8 @@
 
 <div class="multi-media-container">
     {#each displayEntrants as i}
-      <div style="width: {itemWidth}%; height: {itemHeight}%;">
+      <div style="width: {itemWidth}%; height: {itemHeight}%; position: relative;">
+        <p class="media-label">{i.name}</p>
         {#if i.media.mediaType == MediaType.IMAGE}
           <img class="content" src={i.media.mediaSrc} alt="Preview" />
         {:else if i.media.mediaType == MediaType.TEXT}
@@ -52,6 +53,16 @@
     height: 400px;
     justify-content: center;
     margin-top: 15px;
+  }
+
+  .media-label {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    font-size: 0.85em;
+    background-color: #333;
+    z-index: 20;
+    margin: 0;
   }
 
   .content {

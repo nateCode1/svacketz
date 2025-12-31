@@ -184,7 +184,7 @@
     <VotingScreen bind:this={votingScreen} winnersPerMatch={bracket.winnersPerMatch} resolveMatch={resolveMatch} mediaConfig={mediaConfig}/>
     <BracketUI startVoting={votingScreen?.startVoting} bracket={bracket}/>
 
-    <div style="border-radius: 5px; display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px;">
+    <div style="display: flex; flex-direction: column; padding: 8px; overflow-y: auto; padding: 10px; min-width: 250px; border-left: 2px solid #333;">
       <h1 style="text-align: center; margin-bottom: 20px;">Matches</h1>
         {#each bracket.allMatches as match}
           <MatchCard bind:match={match} startVoting={votingScreen?.startVoting} />

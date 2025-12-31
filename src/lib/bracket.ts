@@ -278,13 +278,14 @@ export class Bracket {
         }
 
         let filterRedundant = (match: Match) => {
-            if (match.participants.length <= this.winnersPerMatch && match.results.slice(0, match.participants.length).every(i => i.to)) {
+            if (match.participants.length <= this.winnersPerMatch && match.results.slice().every(i => i.to)) {
                 // Point all participants to subsequent match
                 match.participants.forEach((i, j) => {
                     let pointsToCurr = i.fromResult;
                     let currPointsTo = match.results[j].toParticipant!;
                     if (pointsToCurr) { // Not 1st round
                         pointsToCurr.to = match.results[j].to;
+                        pointsToCurr.toParticipant = match.results[j].toParticipant;
                         currPointsTo.from! = i.from!;
                         currPointsTo.fromResult! = i.fromResult!;
                     }
