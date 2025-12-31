@@ -180,33 +180,42 @@
 
     {#if selectedTab == 0}
         <div class="tab-content">
-            <div style="overflow-y: scroll; max-height: 100%;">
-                {#each entrantList as entrant, i}
-                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                        <!-- <p style="line-height: 0; width: 20px;">{i}</p> -->
-                        <!-- <button on:click={() => moveItem(i, -1)}>↑</button>
-                        <button on:click={() => moveItem(i, 1)}>↓</button> -->
-                        <input type="number" min="0" bind:value={entrant.seed} on:change={sortEntrants} style="width: 50px;" />
-                        <input type="text" bind:value={entrant.name} />
-                        <div style="display: flex; justify-content: center; align-items: center; width: 200px;">
-                            {#if entrant.media.mediaType == MediaType.TEXT}
-                                <button style="width: 70%;" on:click={() => editText(entrant)}>Edit Text</button>
-                            {:else}
-                                <input style="width: 100%;" disabled={entrant.media.mediaType == MediaType.NONE} type="text" bind:value={entrant.media.mediaSrc} />
-                            {/if}
+            <div style="display: flex; flex-direction: column; max-height: 100%;">
+                <div style="overflow-y: scroll; flex-grow: 1; flex-shrink: 1;">
+                    {#each entrantList as entrant, i}
+                        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                            <!-- <p style="line-height: 0; width: 20px;">{i}</p> -->
+                            <!-- <button on:click={() => moveItem(i, -1)}>↑</button>
+                            <button on:click={() => moveItem(i, 1)}>↓</button> -->
+                            <input type="number" min="0" bind:value={entrant.seed} on:change={sortEntrants} style="width: 50px;" />
+                            <input type="text" bind:value={entrant.name} />
+                            <div style="display: flex; justify-content: center; align-items: center; width: 200px;">
+                                {#if entrant.media.mediaType == MediaType.TEXT}
+                                    <button style="width: 70%;" on:click={() => editText(entrant)}>Edit Text</button>
+                                {:else}
+                                    <input style="width: 100%;" disabled={entrant.media.mediaType == MediaType.NONE} type="text" bind:value={entrant.media.mediaSrc} />
+                                {/if}
+                            </div>
+                            <select bind:value={entrant.media.mediaType}>
+                                {#each Object.entries(MediaType).filter(i => isNaN(parseInt(i[0]))) as media}
+                                    <option value={media[1]}>{media[0][0].toUpperCase()}{media[0].split("").slice(1).join("").toLowerCase()}</option>
+                                {/each}
+                            </select>
+                            <button on:click={() => preview(entrant)}>Preview</button>
+                            <button on:click={() => remove(entrant)}>Remove</button>
                         </div>
-                        <select bind:value={entrant.media.mediaType}>
-                            {#each Object.entries(MediaType).filter(i => isNaN(parseInt(i[0]))) as media}
-                                <option value={media[1]}>{media[0][0].toUpperCase()}{media[0].split("").slice(1).join("").toLowerCase()}</option>
-                            {/each}
-                        </select>
-                        <button on:click={() => preview(entrant)}>Preview</button>
-                        <button on:click={() => remove(entrant)}>Remove</button>
+                    {/each}
+                    <div style="height: 40px;"></div>
+                </div>
+                <div style="background-color: #222; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 3px;">
+                    <button on:click={addNew} style="width: 90%; margin: 0 auto 5px;">Add New Blank Participant</button>
+                    <div style="display: flex; gap: 5px;">
+                        <button on:click={downloadEntrantList}>Download Current As .Svacketz</button>
+                        <button on:click={uploadEntrantList}>Upload .Svacketz</button>
+                        <button on:click={uploadEntrantsFromFile}>Upload Participants From Files</button>
                     </div>
-                {/each}
-                <div style="height: 40px;"></div>
+                </div>
             </div>
-            <button on:click={addNew} style="width: 90%; left: 50%; transform: translateX(-50%); position: absolute; bottom: 10px; box-shadow: 0px 0px 4px 1px rgba(140, 140, 140, 0.8);">Add new</button>
         </div>
     {:else if selectedTab == 1}
         <div class="tab-content">
@@ -250,12 +259,7 @@
         </div>
     {/if}
 
-    <div style="display: flex">
-        <button on:click={setupDone}>Done</button>
-        <button on:click={downloadEntrantList}>Download Current Entrant List</button>
-        <button on:click={uploadEntrantList}>Upload Entrant List</button>
-        <button on:click={uploadEntrantsFromFile}>Upload Entrants From File</button>
-    </div>
+    <button style="width: 100%;" on:click={setupDone}>Done</button>
 
     <Overlay bind:visible={textEditorVisible}>
         {#if textEditorFor}
@@ -310,7 +314,7 @@
         padding: 5px;
         border: 1px solid gray;
         border-radius: 5px;
-        height: 300px;
+        height: 400px;
         position: relative;
         margin-bottom: 10px;
     }
