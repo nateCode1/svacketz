@@ -93,9 +93,10 @@
   }
 
   function handleHover(match: Match, participant: MatchParticipant) {
-    // TODO: search backwards
     highlighted = [participant]
     if (participant.data) {
+      // TODO: search forwards
+
       const addSourceToHighlighted = (p: MatchParticipant) => {
         let participantFrom = p.from?.participants.find(i => i.data == p.data);
         if (participantFrom) { 
@@ -107,6 +108,8 @@
       addSourceToHighlighted(participant)
     }
     else {
+        // TODO: search backwards
+
       const addDestinationToHighlighted = (m: Match, seed: number) => {
         let participantToIndex = m.results.findIndex(i => i.toParticipant?.theoreticalSeed == seed);
         if (participantToIndex != -1) {

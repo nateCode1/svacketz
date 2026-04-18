@@ -10,6 +10,8 @@
         mediaConfig: MediaConfig
     ) => void;
 
+    const suggestedCharacterLimit = 45;
+
     let mediaManager: MediaPlayer;
     let mediaPreviewVisible = false;
 
@@ -208,6 +210,9 @@
                     <div style="height: 40px;"></div>
                 </div>
                 <div style="background-color: #222; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 3px;">
+                    {#if entrantList.some(i => i.name.length > suggestedCharacterLimit)}
+                        <p style="margin: 3px 0; font-size: 0.8em;" class="warning">Warning: Suggested character limit exceeded. UI may behave unexpectedly.</p>
+                    {/if}
                     <button on:click={addNew} style="width: 90%; margin: 0 auto 5px;">Add New Blank Participant</button>
                     <div style="display: flex; gap: 5px;">
                         <button on:click={downloadEntrantList}>Download Current As .Svacketz</button>
@@ -244,7 +249,7 @@
             <div style="font-size: 0.7em; margin: 0 0 15px 0;">
                 <p style="color: #bbb; margin: 0;">Multi-preview mode only supports text and images, all other media types will be ignored.</p>
                 {#if entrantList.some(i => i.media && !multiPreviewSupportedMediaTypes.includes(i.media.mediaType) && multiPreview)}
-                    <p style="color: #edc213; margin: 0;">Warning: your list of entrants currently includes unsupported media types.</p>
+                    <p style="margin: 0;" class="warning">Warning: your list of entrants currently includes unsupported media types.</p>
                 {/if}
             </div>
 

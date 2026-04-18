@@ -57,20 +57,19 @@
             winnerMarkerOffset = (elements[numWinners - 1].getBoundingClientRect().right + elements[numWinners].getBoundingClientRect().left) / 2 - container.getBoundingClientRect().x
         }
     }
-
 </script>
 
 <div class="container" bind:this={container}>
     {#if numWinners}
-        <p class="winner-loser-arrow" style="left: {winnerMarkerOffset}px; clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 20% 100%, 0% 50%); top: 0; transform: translate(-50%, -50%);padding: 0px 2px 0 5px;">Win</p>
-        <p class="winner-loser-arrow" style="left: {winnerMarkerOffset}px; clip-path: polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%); bottom: 0; transform: translate(-50%, 50%);padding: 0px 5px 0 2px;">Lose</p>
+        <p class="winner-loser-arrow" style="left: {winnerMarkerOffset}px; clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 20% 100%, 0% 50%); top: 0; transform: translate(-50%, -50%);padding: 0px 1px 0 3px;">Win</p>
+        <p class="winner-loser-arrow" style="left: {winnerMarkerOffset}px; clip-path: polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%); bottom: 0; transform: translate(-50%, 50%);padding: 0px 3px 0 1px;">Lose</p>
     {/if}
     
     {#if mouseXCoordinate}
         <div
             bind:this={ghost}
             class="item ghost"
-            style="left: {ghostLeft}px;">
+            style="left: {ghostLeft}px; width: {100/sortedEntrants.length}%;">
             {displayText(draggingItem)}
         </div>
     {/if}
@@ -80,6 +79,7 @@
         <div
             bind:this={elements[index]}
             class="item {draggingItemId == item.seed ? 'invisible' : ''}"
+            style="width: {100/sortedEntrants.length}%;"
             draggable="true"
             on:dragstart={(e) => {
                 mouseXCoordinate = e.clientX;
@@ -122,15 +122,17 @@
     }
 
     .item {
-        width: 100px;
         background: white;
         padding: 10px;
         cursor: grab;
         background-color: #333;
+        max-width: 200px;
         /* box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.75); */
         border: 1px solid #999;
         position: relative;
         border-radius: 2px;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
     }
 
     .ghost {
@@ -152,7 +154,7 @@
         background-color: #888;
         color: #222;
         font-weight: bold;
-        font-size: 0.75em;
+        font-size: 0.65em;
         left: 50%;
         min-width: 33px;
         text-align: center;
