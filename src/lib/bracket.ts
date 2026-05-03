@@ -53,6 +53,7 @@ export class Match {
 	results: MatchResult[];
 
     childrenTallCache?: number;
+    resultsAsPlacementList?: number[]; // A list of ints where the ith element is the index in participants of the participant that finished in ith place
 
 	constructor(id: number, round: number, participants: MatchParticipant[], sendTo?: Match[]) {
 		this.id = id;
@@ -71,12 +72,27 @@ export class Match {
 		this.results = results;
 	}
 
-    public resolve(matchPlacment: Entrant[]) {
+    public resolve(matchPlacement: Entrant[]) {
+        this.resultsAsPlacementList = matchPlacement.map(i => this.participants.findIndex(j => j.data == i))
+        console.log("resultsAsNumberList", this.resultsAsPlacementList)
+
         this.resolved = true;
         this.results.forEach((i,j) => {
-            i.data = matchPlacment[j];
-            if (i.toParticipant) i.toParticipant.data = matchPlacment[j];
-            else matchPlacment[j].exitedAs = this.participants[j].theoreticalSeed;
+            i.data = matchPlacement[j];
+            if (i.toParticipant) i.toParticipant.data = matchPlacement[j];
+            else matchPlacement[j].exitedAs = this.participants[j].theoreticalSeed;
+        })
+    }
+
+    public resolveFromNumberedList(resultsAsPlacementList: number[]) {
+        this.resultsAsPlacementList = resultsAsPlacementList;
+
+        this.resolved = true;
+        this.results.forEach((i, j) => {
+            let entrantForPlace = this.participants[resultsAsPlacementList[j]].data;
+            i.data = entrantForPlace;
+            if (i.toParticipant) i.toParticipant.data = entrantForPlace;
+            else if (entrantForPlace) entrantForPlace.exitedAs = this.participants[j].theoreticalSeed;
         })
     }
 
@@ -137,8 +153,9 @@ export class Bracket {
         console.log("allEntrantSeeds", allEntrantSeeds)
         console.log("requiredBYEs", requiredBYEs)
 
-        
-        let requiredBYEsParameter = participantsPerMatch % winnersPerMatch == 0 ? requiredBYEs : undefined // TODO: this is a temporary solution
+        // The line below is OKAY for ppm % wpm != 0, based on experimental results there may be a better way, but there isn't a "perfect way"
+        // Finding the best would involve defining the most desirable outcome, and maybe manually scoring many solutions, can't find a mathematical solution yet
+        let requiredBYEsParameter = participantsPerMatch % winnersPerMatch == 0 ? requiredBYEs : undefined
         let allRoundsUpper = [this.getSingleRound(allEntrantSeeds, {setNumPlaceholders: requiredBYEsParameter})]
 
         console.log("allRounds[allRounds.length - 1].matches", allRoundsUpper[allRoundsUpper.length - 1].matchGroups)
@@ -387,7 +404,7 @@ export class Bracket {
         };
     }
 
-    getLosersBlueprint(minFirstRoundParticipants: number): RoundBlueprint[] {
+    private getLosersBlueprint(minFirstRoundParticipants: number): RoundBlueprint[] {
         // shorthand for readability
         let ppm = this.participantsPerMatch;
         let wpm = this.winnersPerMatch;
@@ -431,5 +448,13 @@ export class Bracket {
     get allMatches() {
         if (this.allMatchesLower) return [...this.allMatchesUpper, ...this.allMatchesLower, this.grandFinals]
         return [...this.allMatchesUpper, this.grandFinals]
+    }
+
+    get saveString() {
+        return 1
+    }
+
+    static fromString(saveString: string): Bracket {
+        return new Bracket([], 1, 2) // TODO: implement
     }
 }
