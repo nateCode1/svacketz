@@ -191,7 +191,7 @@ This covers the case of seeding a single round of matches with n participants an
 
 Most of the procedures for single round non-ideal seeding match those for the ideal case. For our previous methods to apply, we need a number of participants that is divisible by the number of participants per match (denoted as n).
 
-To accommodate this, some matches will be missing one or more participants. In the case of a bracket with 2 participants per match this is commonly referred to as a BYE round. Going forward BYE will refer to a dummy participant which doesn't actually participate, but is a placeholder for within the bracket.
+To accommodate this, some matches will be missing one or more participants. In the case of a bracket with 2 participants per match this is commonly referred to as a BYE round. Going forward "BYE" will refer to a dummy participant which doesn't actually participate, but is a placeholder for within the bracket.
 
 Lets look at a 2 participant per match example to begin. Suppose we have participants {1,2,3,4,5}. For our methods to work we will need the number of participants to be divisible by 2, which 5 is not. This constraint can be formalized as:
 
@@ -223,7 +223,7 @@ AssignSingleRoundMatches(Participant[] allParticipants, int numParticipants, int
 ```
 ## Seeding Subsequent Rounds
 ### Case 1: Participants Per Match is Divisible by Winners Per Match
-*For brevity participants per patch and winners per match will hitherto be referred to as PPM and WPM respectively.*
+*For brevity participants per patch and winners per match will be referred to as PPM and WPM respectively.*
 
 #### Case 1.1: Single Winner Per Match
 When each match only has a single winner, the winner of the match should be given the top seed present in the match when going into the next round. Meaning if 1 and 8 are paired together, the winner would always be seeded as 1 going into the next round. This can extend to >2 PPM; if a match was 2v7v11, the winner would be given the 2 seed in the next round.
@@ -238,19 +238,19 @@ When each match only has a single winner, the winner of the match should be give
   This solution would also only make sense in the case where seeding is strongly defined, as it will provide even greater advantage to participants with a better seed, which may be undesirable if seeding is poorly defined or perhaps even random.
 </details>
 <br>
-In the diagram below the rounds are given their conventional names for readability, as well as being numbered according to the top seed present in the match (i.e. the top seed in Semifinal 2, is seed 2).
+In the diagram below the rounds are given their conventional names for readability, as well as being numbered according to the top seed present in the match (i.e. the top seed in Semifinal 2 is seed 2). "Winner of" is shortened to "W.O." in the diagram for readability.
 
 ```mermaid
 graph LR
   A1["Quaterfinal 1<br><sub>1st Seed<br>8th Seed</sub>"] -->
-   Q1["Semifinal 1<br><sub>Winner of Quaterfinal 1<br>Winner of Quarterfinal 4</sub>"]
+   Q1["Semifinal 1<br><sub>W.O. Quaterfinal 1<br>W.O. Quarterfinal 4</sub>"]
   A2["Quaterfinal 4<br><sub>4th Seed<br>5th Seed</sub>"] --> Q1
 
   A3["Quaterfinal 2<br><sub>2nd Seed<br>7th Seed</sub>"] -->
-   Q2["Semifinal 2<br><sub>Winner of Quarterfinal 2<br>Winner of Quarterfinal 3</sub>"]
+   Q2["Semifinal 2<br><sub>W.O. Quarterfinal 2<br>W.O. Quarterfinal 3</sub>"]
   A4["Quaterfinal 3<br><sub>3rd Seed<br>6th Seed</sub>"] --> Q2
 
-  Q1 --> F1["Final<br><sub>Winner of Semifinal 1<br>Winner of Semifinal 2</sub>"]
+  Q1 --> F1["Final<br><sub>W.O. Semifinal 1<br>W.O. Semifinal 2</sub>"]
   Q2 --> F1
 ```
 
@@ -306,7 +306,7 @@ Another flaw in this approach is that it requires that each match not only outpu
 
 It bears mention that winners from a single match not being placed together in subsequent matches could be viewed as a positive depending on the application.
 
-Either of these solutions is valid, however when looking at [Case 2](#case-2-participants-per-match-not-divisible-by-winners-per-match), solution 2 is preferred, as in that case it is impossible to have all winners from a match end up in the same match in the next round.
+Either of these solutions is valid, however as seen in Case 2 (below), solution 2 is more generally applicable.
 
 <details>
   <summary>What about having a single winner?</summary>
@@ -315,7 +315,7 @@ Either of these solutions is valid, however when looking at [Case 2](#case-2-par
   - Run the final match and take the multiple winners as the winners of the bracket
   - Run the final match and take whichever winner comes 1st in the final match as the winner of the bracket
   - Have the final match only produce a single winner
-  - Create another match after the "final" match that takes all the winners from the "final" match and only produces a single error.
+  - Create another match after the "final" match that takes all the winners from the "final" match and only produces a single winner.
 </details>
 
 ### Case 2: Participants Per Match NOT Divisible by Winners Per Match
@@ -330,7 +330,7 @@ Our previous constraint was to ensure we have the right quantity participants to
 
 We will begin with the `PPM % WPM == 0` case. Knowing that our final round will have `1 * PPM` participants (as there is only one match, the finals), we can work backwards. The round before last will need to produce `1 * PPM` winners, meaning we know `X * WPM = PPM`. Solving for `X` gives us `X = PPM / WPM`. Extending this logic tells us that each round will have a number of matches equal to `PPM / WPM` multiplied by the number of matches in the subsequent round. This is an exponential relationship where our base is `PPM / WPM`.
 
-This means our final match will have PPM participants, and each previous round will increase the number of participants by a factor of PPM/WPM. So to ensure that the number of participants is valid, it must be the case that starting with the total number of participants, and multiplying by WPM/PPM repeatedly should eventually yield the number of participants in the final: PPM. This can be stated more formally as: 
+This means our final match will have PPM participants, and each previous round will increase the number of participants by a factor of `PPM/WPM`. So to ensure that the number of participants is valid, it must be the case that starting with the total number of participants, and multiplying by `WPM/PPM` repeatedly should eventually yield the number of participants in the final: PPM. This can be stated more formally as: 
 
 $\log_{\mathrm{PPM/WPM}}{(\frac{Num Participants}{PPM})} \: \% \: 1 \: == 0$
 
@@ -357,10 +357,10 @@ No perfect solution is available, but the best solution is to add placeholder pa
 TODO: Multiple rounds pseudocode
 
 # Double Elimination
-In a single elimination bracket, losing a single match causes a participant to be eliminated fromt the bracket, hence the name. A double elimination bracket gives each participant a second chance, meaning two losses are required to be eliminated*.
+In a single elimination bracket, losing a single match causes a participant to be eliminated from the bracket, hence the name. A double elimination bracket gives each participant a second chance, meaning two losses are required to be eliminated.
 
 <details>
-  <summary>*Two losses aren't always required</summary>
+  <summary>Two losses aren't always required</summary>
   
   TODO: Write about bracket reset here
 </details>
@@ -457,7 +457,7 @@ But this is impossible, right now we have no wiggle room, and always end up with
 
 So lets amend that: every round in losers round should either have the same number of participants from the previous round of loser's bracket **OR** it should only have participants from the previous round of loser's bracket (first round excepted).
 
-This gives us something to work with. An "extra" match as we called it before, where no new participants coming from winner's are introduced, only those from the previous round of loser's. We will redo our table, and label these "extra" rounds as `x.5`. So if we have an extra round after round `2`, it will be labelled `2.5`.
+This gives us something to work with. We can introduce an "extra" match as we called it before, where no new participants coming from winner's are introduced, only those from the previous round of loser's. With this, we will redo our table, and label these "extra" rounds as `x.5`. So if we have an extra round after round `2`, it will be labelled `2.5`.
 
 | Loser's Bracket Round Num | From Previous Round  | From Winner's Bracket | Total Participants |
 | ------------------------- | -------------------- | --------------------- | ------------------ |
@@ -468,20 +468,22 @@ This gives us something to work with. An "extra" match as we called it before, w
 | 3.5 | P/8 | -   | P/8 |
 | 4   | P/16| P/16| P/8 |
 
-*And so on and soforth*
+*And so on and so forth...*
 
-Hopefully, this makes the trend clear. Looking at the last column we see that every two rounds, the number of participants halves. This is in contrast to the trend in winner's bracket where the number of participants halves every round. This discrepancy is because loser's bracket is constantly being fed additional participants by those losing in winner's bracket. Interestingly, this "halve every two rounds" trend holds even for the first two rounds, which have hitherto been a little bit of an exception.
+Hopefully, this makes the trend clear. Looking at the last column we see that every two rounds, the number of participants halves. This is in contrast to the trend in winner's bracket where the number of participants halves every round. This discrepancy is because loser's bracket is constantly being fed additional participants by those losing in winner's bracket. Interestingly, this "halve every two rounds" trend holds even for the first two rounds, which have been a little bit of an exception up to this point.
 
-One more small detail is that in all these matches, the winner will always get the higher seed going forward, and the loser will get the lower seed. As an example if `1` goes up against `8`, and `8` wins, it gets the top seed going forward, whereas `1` will get the 8th seed.
+One more small detail is that in all these matches, the winner will always get the higher seed going forward, and the loser will get the lower seed. As an example if `1` goes up against `8`, and `8` wins, `8` will become the 1st seed going forward, whereas `1` will get the 8th seed.
 
 This gives us all the information we need to create an ideal 2 to 1 bracket.
 
+**TODO: pseudocode here, and possibly some more explanation.**
+
 ### Case 2: 2 to 1 Non-Ideal
-Here we run into a conceptual issue. To deal with non-ideal numbers of participants, we have hitherto added placeholders (denoted as BYEs) to accommodate have non-ideal numbers of participants. This worked well because any placeholder would automatically lose any match in which it is present, at which point it would exit the bracket and we would no longer need to consider it. Now it is instead sent to the lower bracket.
+Here we run into a conceptual issue. To deal with non-ideal numbers of participants, we have added placeholders (denoted as BYEs) to accommodate rounds that have non-ideal numbers of participants. This worked well because any placeholder would automatically lose any match in which it is present, at which point it would exit the bracket and we would no longer need to consider it. Now it is instead sent to the lower bracket.
 
 Lets take a look at that same bracket from earlier, but with only 6 participants:
 
-*A `X` is used to represent a BYE.*
+*`X` is used to represent a BYE.*
 
 ```mermaid
 graph LR
@@ -535,7 +537,7 @@ graph LR
   L6 --> W8
 ```
 
-This contains a much more important issue. In the loser's bracket 1st round: `5` has a BYE, whereas `6,7` do not. Intuitively this may seem off in some way, unfortunately there is no solution which solves this more than it creates other issues. By the logic of how we've been handling non-ideal numbers of participants thus far, this inequality of matches is ostensibly acceptable, but suboptimal.
+This contains a much more important issue. In the loser's bracket 1st round: `5` has a BYE, whereas `6,7` do not. Intuitively, this may seem off in some way. Unfortunately there is no solution which solves this more than it creates other issues. By the logic of how we've been handling non-ideal numbers of participants thus far, this inequality of matches is ostensibly acceptable, yet still suboptimal.
 
 ### Case 3: N to M
 As is the trend, the existence of a loser's bracket can complicate what we've already covered. The key complexity of N to 1 is that the number of participants introduced into the loser's bracket by each round of the winner's bracket is equal to `PPM-WPM`. This means that for things to behave nicely, we not only need `PPM % WPM == 0`, but also `PPM % (PPM-WPM) == 0`. !!!!!!!!!!!!!!!!!!!!!!!!!!<<<<<<<<<< This is wrong
@@ -561,12 +563,13 @@ This requirement needs reevaluating for the 3 to 1 case. The intuitive expansion
 - Clarify what increasing and decreasing order means
 - Add a glossary
 - A 3 to 2 bracket with 9 participants never terminates (eventually you get an endless loop of two matches producing 4 winners which produces 4 matches, etc etc)
+- I don't think appendix 1 is wrong, but it is neither as understandable nor as rigorous as it could be.
 
 # Appendicies
 ## Appendix 1: Why a 3 to 2 Bracket Always Requires Non 1st Round BYEs
 Assuming a bracket of `P` participants with 3 PPM (Participants per Match) and 2 WPM (Winners per Match) it is impossible to create a bracket without BYEs in rounds that aren't the first round, provided `P > 3`. The reason why relates to prime factorization and the relationship between participants in one round and the next.
 
-In a single round every 3 participants produce 2 winners (which move on to the next round). This means that each round will have `2/3 * Previous Round Participants`. This means that for each round after the first, the prime factorization of the number of participants in that round will contain a 2.
+In a single round every 3 participants produce 2 winners (which move on to the next round). This means that the number of participants in a round is equal to `2/3 * Previous Round Participants`. This means that for each round after the first, the prime factorization of the number of participants in that round will contain a 2.
 
 This is where the issue lies, if at any point the number of participants in a round isn't evenly divisible by 3, then it will be impossible to create matches for that round without adding a placeholder participant (BYE). A number is only divisible by 3 if its prime factorization includes a 3. Because we are introducing a 2 into the prime factorization with each subsequent round, it is inevitable that eventually the prime facotrization will include at least two 2s, and no 3s, at which point it will be required to add a placeholder.
 
